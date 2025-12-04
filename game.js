@@ -647,15 +647,33 @@ function initElements() {
 }
 
 // =================== 단어 로드 ===================
+// game.js - loadWords 함수 수정
 async function loadWords() {
     try {
-        const response = await fetch('words.json');
+        // 현재 페이지의 경로를 기반으로 words.json 경로 생성
+        const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+        const wordsUrl = baseUrl + '/words.json';
+        
+        console.log('📂 words.json 요청 URL:', wordsUrl);
+        
+        const response = await fetch(wordsUrl, {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const data = await response.json();
         state.words = data.words;
-        console.log(`📚 ${state.words.length}개 단어 로드됨`);
+        console.log(`✅ ${state.words.length}개 단어 로드됨`);
     } catch (err) {
         console.error('❌ 단어 로드 실패:', err);
         state.words = getDefaultWords();
+        console.log('🔄 기본 단어 데이터 사용');
     }
 }
 
