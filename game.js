@@ -1,4 +1,4 @@
-// game.js - 재구성된 버전
+// game.js - 함수 선언 순서 수정 버전
 
 // =================== 전역 변수 선언 ===================
 const CONFIG = {
@@ -137,13 +137,11 @@ function saveNickname(nickname) {
 function showScreen(screen) {
     console.log(`🖥️ 화면 전환: ${screen}`);
     
-    // 모든 오버레이 숨기기
     document.querySelectorAll('.overlay').forEach(overlay => {
         overlay.classList.remove('active');
     });
     
     if (screen === 'game') {
-        // 게임 화면 표시
         document.querySelector('.battle-area').style.display = 'grid';
         document.querySelector('.health-area').style.display = 'flex';
         document.querySelector('.problem-card').style.display = 'flex';
@@ -151,7 +149,6 @@ function showScreen(screen) {
         document.querySelector('.separator-line').style.display = 'block';
         if (el.pauseBtn) el.pauseBtn.style.display = 'block';
     } else {
-        // 오버레이 화면 표시
         document.querySelector('.battle-area').style.display = 'none';
         document.querySelector('.health-area').style.display = 'none';
         document.querySelector('.problem-card').style.display = 'none';
@@ -159,7 +156,6 @@ function showScreen(screen) {
         document.querySelector('.separator-line').style.display = 'none';
         if (el.pauseBtn) el.pauseBtn.style.display = 'none';
         
-        // 해당 오버레이 표시
         const target = document.querySelector(`.${screen}-screen`);
         if (target) {
             target.classList.add('active');
@@ -194,6 +190,389 @@ function showNicknameScreen() {
     }
     
     showScreen('nickname');
+}
+
+// =================== 대사 시스템 ===================
+function showSpeech(text, speaker = 'monster', type = 'normal') {
+    if (!el.monsterSpeech) return;
+    
+    const speechContent = el.monsterSpeech.querySelector('.speech-content');
+    if (speechContent) {
+        speechContent.textContent = text;
+    }
+    
+    el.monsterSpeech.className = 'speech-bubble';
+    el.monsterSpeech.classList.add(speaker);
+    el.monsterSpeech.classList.add(type);
+    
+    el.monsterSpeech.style.animation = 'none';
+    setTimeout(() => {
+        el.monsterSpeech.style.animation = 'speechAppear 3s ease-in-out forwards';
+    }, 10);
+}
+
+function showRandomSpeech(speaker = 'monster', type = 'normal') {
+    const dialogues = speaker === 'monster' ? MONSTER_DIALOGUES : PLAYER_DIALOGUES;
+    const dialogueList = dialogues[type] || dialogues.normal;
+    const randomText = dialogueList[Math.floor(Math.random() * dialogueList.length)];
+    showSpeech(randomText, speaker, type);
+}
+
+// =================== 이펙트 함수들 ===================
+function createEffect(emoji, x, y, type = 'primary') {
+    const layer = document.querySelector('.effects-layer');
+    if (!layer) return;
+    
+    const effect = document.createElement('div');
+    effect.className = 'dynamic-effect';
+    effect.textContent = emoji;
+    effect.style.left = `${x}%`;
+    effect.style.top = `${y}%`;
+    effect.style.position = 'absolute';
+    effect.style.fontSize = '36px';
+    effect.style.transform = 'translate(-50%, -50%)';
+    effect.style.pointerEvents = 'none';
+    effect.style.zIndex = '20';
+    effect.style.animation = 'scaleIn 0.5s ease-out forwards';
+    
+    switch(type) {
+        case 'primary': effect.style.color = '#6366f1'; break;
+        case 'danger': effect.style.color = '#ef4444'; break;
+        case 'warning': effect.style.color = '#f59e0b'; break;
+        case 'success': effect.style.color = '#10b981'; break;
+        case 'potion': effect.style.color = '#8b5cf6'; break;
+    }
+    
+    layer.appendChild(effect);
+    
+    setTimeout(() => {
+        if (effect.parentNode) {
+            effect.remove();
+        }
+    }, 800);
+}
+
+function createRippleEffect(x, y, color = '#6366f1') {
+    const ripple = document.createElement('div');
+    ripple.className = 'ripple-effect';
+    ripple.style.cssText = `
+        position: absolute;
+        left: ${x}%;
+        top: ${y}%;
+        width: 20px;
+        height: 20px;
+        border-color: ${color};
+        z-index: 999;
+        pointer-events: none;
+    `;
+    
+    const layer = document.querySelector('.effects-layer');
+    if (layer) {
+        layer.appendChild(ripple);
+    }
+    
+    setTimeout(() => {
+        if (ripple.parentNode) {
+            ripple.remove();
+        }
+    }, 1000);
+}
+
+function showAttackBeam(from, to) {
+    const beam = document.createElement('div');
+    beam.className = 'attack-path';
+    beam.style.cssText = `
+        position: absolute;
+        top: 50%;
+        ${from === 'player' ? 'left: 70%; right: 30%;' : 'left: 30%; right: 70%;'}
+        height: 3px;
+        background: linear-gradient(90deg, 
+            ${from === 'player' ? 'rgba(16, 185, 129, 0)' : 'rgba(239, 68, 68, 0)'} 0%,
+            ${from === 'player' ? 'rgba(16, 185, 129, 0.8)' : 'rgba(239, 68, 68, 0.8)'} 50%,
+            ${from === 'player' ? 'rgba(239, 68, 68, 0)' : 'rgba(16, 185, 129, 0)'} 100%
+        );
+        transform: translateY(-50%);
+        z-index: 1;
+        animation: attackBeam 0.3s ease-out forwards;
+        box-shadow: 0 0 20px ${from === 'player' ? '#10b981' : '#ef4444'};
+    `;
+    
+    const battleArea = document.querySelector('.battle-area');
+    if (battleArea) {
+        battleArea.appendChild(beam);
+    }
+    
+    setTimeout(() => {
+        if (beam.parentNode) {
+            beam.remove();
+        }
+    }, 300);
+}
+
+function shakeScreen(intensity = 5, duration = 300) {
+    const container = document.querySelector('.game-container');
+    if (!container) return;
+    
+    container.style.animation = `screenShake ${duration}ms ease`;
+    
+    setTimeout(() => {
+        container.style.animation = '';
+    }, duration);
+}
+
+function flashScreen(color = 'red', duration = 200) {
+    const flash = document.createElement('div');
+    flash.className = 'screen-flash';
+    flash.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: ${color === 'red' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'};
+        z-index: 9998;
+        pointer-events: none;
+        animation: ${color === 'red' ? 'flashRed' : 'flashGreen'} ${duration}ms ease;
+    `;
+    
+    const container = document.querySelector('.game-container');
+    if (container) {
+        container.appendChild(flash);
+    }
+    
+    setTimeout(() => {
+        if (flash.parentNode) {
+            flash.remove();
+        }
+    }, duration);
+}
+
+function enhancePlayerHit() {
+    const player = document.querySelector('.player-circle');
+    if (!player) return;
+    
+    player.style.transform = 'scale(0.9)';
+    player.style.transition = 'transform 0.1s ease';
+    player.style.filter = 'brightness(0.8) saturate(0.8)';
+    
+    setTimeout(() => {
+        player.style.transform = 'scale(1)';
+        player.style.filter = '';
+    }, 100);
+    
+    setTimeout(() => {
+        player.style.transition = '';
+    }, 200);
+}
+
+function showDamageNumber(amount, x, y, color = '#ef4444', isCritical = false) {
+    const damage = document.createElement('div');
+    damage.className = 'damage-number';
+    damage.textContent = `-${amount}`;
+    damage.style.cssText = `
+        position: absolute;
+        left: ${x}%;
+        top: ${y}%;
+        color: ${color};
+        font-size: ${isCritical ? '50px' : '40px'};
+        font-weight: 900;
+        text-shadow: 0 0 20px ${color}, 0 0 40px ${color};
+        z-index: 1000;
+        pointer-events: none;
+        animation: damageFloat 1.5s ease-out forwards, ${isCritical ? 'criticalHit 0.5s ease' : 'none'};
+    `;
+    
+    const effectsLayer = document.querySelector('.effects-layer');
+    if (effectsLayer) {
+        effectsLayer.appendChild(damage);
+    }
+    
+    setTimeout(() => {
+        if (damage.parentNode) {
+            damage.remove();
+        }
+    }, 1500);
+}
+
+function showEffect(target, type, amount = 0) {
+    const effect = document.createElement('div');
+    effect.className = 'dynamic-effect';
+    
+    switch(type) {
+        case 'hit':
+            effect.textContent = '💥';
+            effect.style.color = '#ef4444';
+            break;
+        case 'wrong':
+            effect.textContent = '❌';
+            effect.style.color = '#ef4444';
+            break;
+        case 'defense':
+            effect.textContent = '🛡️';
+            effect.style.color = '#6366f1';
+            break;
+        case 'heal':
+            effect.textContent = `+${amount}💚`;
+            effect.style.color = '#10b981';
+            break;
+    }
+    
+    effect.style.position = 'absolute';
+    effect.style.left = '50%';
+    effect.style.top = '50%';
+    effect.style.transform = 'translate(-50%, -50%)';
+    effect.style.fontSize = '24px';
+    effect.style.zIndex = '999';
+    effect.style.pointerEvents = 'none';
+    effect.style.animation = 'hitEffect 0.8s ease-out forwards';
+    
+    const effectsLayer = document.querySelector('.effects-layer');
+    if (effectsLayer) {
+        effectsLayer.appendChild(effect);
+    }
+    
+    setTimeout(() => {
+        if (effect.parentNode) {
+            effect.remove();
+        }
+    }, 800);
+}
+
+function showMessage(text) {
+    const message = document.createElement('div');
+    message.className = 'battle-message';
+    message.textContent = text;
+    message.style.position = 'fixed';
+    message.style.top = '50%';
+    message.style.left = '50%';
+    message.style.transform = 'translate(-50%, -50%)';
+    message.style.background = 'rgba(0,0,0,0.8)';
+    message.style.color = '#f59e0b';
+    message.style.padding = '8px 12px';
+    message.style.borderRadius = '6px';
+    message.style.fontWeight = 'bold';
+    message.style.zIndex = '9999';
+    message.style.fontSize = '14px';
+    message.style.textAlign = 'center';
+    message.style.animation = 'fadeIn 0.2s ease';
+    
+    document.body.appendChild(message);
+    
+    setTimeout(() => {
+        message.style.opacity = '0';
+        message.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => {
+            if (message.parentNode) {
+                message.remove();
+            }
+        }, 300);
+    }, 1500);
+}
+
+function createTextShake(element) {
+    if (!element) return;
+    
+    element.classList.add('text-shake');
+    
+    setTimeout(() => {
+        element.classList.remove('text-shake');
+    }, 300);
+}
+
+function createPulseEffect(element) {
+    if (!element) return;
+    
+    element.style.animation = 'pulse 0.5s ease 3';
+    
+    setTimeout(() => {
+        element.style.animation = '';
+    }, 1500);
+}
+
+function createGlowEffect(element, color = '#6366f1', duration = 1000) {
+    if (!element) return;
+    
+    element.classList.add('glow-effect');
+    element.style.boxShadow = `0 0 20px ${color}`;
+    
+    setTimeout(() => {
+        element.classList.remove('glow-effect');
+        element.style.boxShadow = '';
+    }, duration);
+}
+
+function animateAvatar(type, action) {
+    const avatar = type === 'monster' ? el.monsterAvatar : el.playerAvatar;
+    if (!avatar) return;
+    
+    avatar.classList.remove('hit', 'appear', 'death');
+    
+    if (action === 'hit') {
+        avatar.classList.add('hit');
+        setTimeout(() => avatar.classList.remove('hit'), 300);
+    } else if (action === 'appear') {
+        avatar.classList.add('appear');
+        setTimeout(() => avatar.classList.remove('appear'), 500);
+    } else if (action === 'death') {
+        avatar.classList.add('death');
+        createEffect('💥', 50, 50, 'danger');
+    }
+}
+
+function playSound(type) {
+    try {
+        const soundMap = {
+            'correct': el.soundCorrect,
+            'wrong': el.soundWrong,
+            'damage': el.soundDamage,
+            'hit': el.soundHit,
+            'combo': el.soundCombo,
+            'victory': el.soundVictory,
+            'potion': el.soundPotion
+        };
+        
+        const sound = soundMap[type];
+        if (sound) {
+            sound.currentTime = 0;
+            sound.play().catch(() => {});
+        }
+    } catch (err) {
+        console.log('🔇 사운드 재생 실패:', err);
+    }
+}
+
+function vibrate(pattern) {
+    if ('vibrate' in navigator) {
+        try {
+            navigator.vibrate(pattern);
+        } catch (err) {
+            console.log('📳 진동 실패');
+        }
+    }
+}
+
+function initAudio() {
+    try {
+        const sounds = [
+            el.soundCorrect,
+            el.soundWrong,
+            el.soundDamage,
+            el.soundHit,
+            el.soundCombo,
+            el.soundVictory,
+            el.soundPotion
+        ];
+        
+        sounds.forEach(sound => {
+            if (sound) {
+                sound.volume = 0.6;
+                sound.load();
+            }
+        });
+        console.log('🔊 오디오 초기화 완료');
+    } catch (err) {
+        console.log('🔇 오디오 초기화 실패');
+    }
 }
 
 // =================== DOM 요소 초기화 ===================
@@ -296,25 +675,27 @@ function getDefaultWords() {
 // =================== 이벤트 설정 ===================
 function setupEvents() {
     // 게임 컨트롤 버튼
-    el.startBtn.addEventListener('click', startGame);
-    el.pauseBtn.addEventListener('click', togglePause);
-    el.resumeBtn.addEventListener('click', resumeGame);
-    el.restartBtn.addEventListener('click', restartGame);
-    el.restartFromLoseBtn.addEventListener('click', restartGame);
-    el.playAgainBtn.addEventListener('click', restartGame);
+    if (el.startBtn) el.startBtn.addEventListener('click', startGame);
+    if (el.pauseBtn) el.pauseBtn.addEventListener('click', togglePause);
+    if (el.resumeBtn) el.resumeBtn.addEventListener('click', resumeGame);
+    if (el.restartBtn) el.restartBtn.addEventListener('click', restartGame);
+    if (el.restartFromLoseBtn) el.restartFromLoseBtn.addEventListener('click', restartGame);
+    if (el.playAgainBtn) el.playAgainBtn.addEventListener('click', restartGame);
     
     // 입력 컨트롤 버튼
-    el.clearBtn.addEventListener('click', clearInput);
-    el.submitBtn.addEventListener('click', checkAnswer);
-    el.potionBtn.addEventListener('click', usePotion);
+    if (el.clearBtn) el.clearBtn.addEventListener('click', clearInput);
+    if (el.submitBtn) el.submitBtn.addEventListener('click', checkAnswer);
+    if (el.potionBtn) el.potionBtn.addEventListener('click', usePotion);
     
     // 입력 필드 이벤트
-    el.input.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            checkAnswer();
-        }
-    });
+    if (el.input) {
+        el.input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                checkAnswer();
+            }
+        });
+    }
     
     // 오디오 초기화
     document.addEventListener('click', initAudio, { once: true });
@@ -430,6 +811,8 @@ async function loadRankings(type = 'score') {
 
 async function showRankingScreen(type = 'score') {
     const rankingList = document.getElementById('rankingList');
+    if (!rankingList) return;
+    
     rankingList.innerHTML = `
         <div class="loading-rankings">
             <i class="fas fa-spinner fa-spin"></i> 랭킹 로딩 중...
@@ -452,6 +835,7 @@ async function showRankingScreen(type = 'score') {
 
 function renderRankings(rankings, type) {
     const rankingList = document.getElementById('rankingList');
+    if (!rankingList) return;
     
     if (rankings.length === 0) {
         rankingList.innerHTML = `
@@ -506,6 +890,8 @@ function renderRankings(rankings, type) {
 
 function renderMyRanking(rankings, type) {
     const myRanking = document.getElementById('myRanking');
+    if (!myRanking) return;
+    
     const myDeviceId = getDeviceId();
     const myRank = rankings.findIndex(rank => rank.deviceId === myDeviceId);
     
@@ -617,8 +1003,10 @@ function startGame() {
     startTimer();
     
     setTimeout(() => {
-        el.input.focus();
-        el.input.value = '';
+        if (el.input) {
+            el.input.focus();
+            el.input.value = '';
+        }
     }, 300);
     
     showRandomSpeech('monster', 'normal');
@@ -668,10 +1056,10 @@ function spawnMonster(level) {
     state.monsterHp = monster.hp;
     state.monsterMaxHp = monster.hp;
     
-    el.monsterAvatar.textContent = monster.emoji;
-    el.monsterNameDisplay.textContent = monster.name;
-    el.monsterLevel.textContent = `Lv.${level}`;
-    el.currentStage.textContent = level;
+    if (el.monsterAvatar) el.monsterAvatar.textContent = monster.emoji;
+    if (el.monsterNameDisplay) el.monsterNameDisplay.textContent = monster.name;
+    if (el.monsterLevel) el.monsterLevel.textContent = `Lv.${level}`;
+    if (el.currentStage) el.currentStage.textContent = level;
     
     updateHpDisplay();
     
@@ -709,22 +1097,23 @@ function newQuestion() {
     state.questionTime = Date.now();
     state.input = "";
     
-    el.initialDisplay.textContent = state.currentWord.hint;
-    el.meaningDisplay.textContent = state.currentWord.meaning;
-    el.input.value = '';
-    el.input.focus();
+    if (el.initialDisplay) el.initialDisplay.textContent = state.currentWord.hint;
+    if (el.meaningDisplay) el.meaningDisplay.textContent = state.currentWord.meaning;
+    if (el.input) {
+        el.input.value = '';
+        el.input.focus();
+    }
     
     state.timeLeft = CONFIG.TIME_LIMIT;
     updateTime();
     
-    createGlowEffect(el.initialDisplay, '#6366f1', 1000);
-    createTextShake(el.initialDisplay);
+    if (el.initialDisplay) {
+        createGlowEffect(el.initialDisplay, '#6366f1', 1000);
+        createTextShake(el.initialDisplay);
+    }
     
     console.log(`📝 문제: ${state.currentWord.word} (${state.currentWord.hint})`);
 }
-
-// ... (이하 기존 게임 로직 함수들은 이전과 동일하게 유지)
-// 시간 관계상 이하 함수들은 생략하고 필요한 함수만 작성합니다
 
 function clearInput() {
     el.input.value = '';
