@@ -5,39 +5,109 @@ const CONFIG = {
     STAGES: 10,
     TIME_LIMIT: 10,
     PLAYER_HP: 100,
-    MONSTER_BASE_HP: 100,
+    MONSTER_BASE_HP: 150,
     
-    BASE_DAMAGE: 25,
-    TIME_BONUS: 5,
-    COMBO_MULTIPLIER: [1.0, 1.4, 1.9, 2.5, 3.2, 4.0, 4.9, 5.9, 7.0, 8.2],
+    BASE_DAMAGE: 20,
+    TIME_BONUS: 3,
+    COMBO_MULTIPLIER: [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8],
     
-    DEFENSE_CHANCE: [0, 0, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55],
-    HEAL_CHANCE: [0, 0, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5],
-    HEAL_PERCENT: [0.1, 0.25],
+    DEFENSE_CHANCE: [0, 0, 0.15, 0.18, 0.21, 0.24, 0.27, 0.30, 0.33, 0.36],
+    HEAL_CHANCE: [0, 0, 0.10, 0.13, 0.16, 0.19, 0.22, 0.25, 0.28, 0.31],
+    HEAL_PERCENT: [0.08, 0.20],
     
-    SCORE_BASE: 200,
-    SCORE_TIME: 20,
-    SCORE_COMBO: 100,
-    SCORE_STAGE: 1500,
+    SCORE_BASE: 250,  // 기존: 200
+    SCORE_TIME: 25,   // 기존: 20
+    SCORE_COMBO: 120, // 기존: 100
+    SCORE_STAGE: 2000, // 기존: 1500
     
     COMBO_THRESHOLDS: [3, 5, 8, 12],
-    COMBO_MULTIPLIERS: [1.8, 2.4, 3.1, 4.0],
+    COMBO_MULTIPLIERS: [1.5, 1.8, 2.1, 2.4],
     
     POTION_HEAL: 30,
-    POTION_COUNT: 3
+    POTION_COUNT: 2
 };
 
 const MONSTERS = [
-    { level: 1, emoji: "😈", name: "초급 몬스터", hp: 80, color: "#6366f1", attack: 10 },
-    { level: 2, emoji: "👻", name: "유령 몬스터", hp: 110, color: "#8b5cf6", attack: 15 },
-    { level: 3, emoji: "🤖", name: "로봇 몬스터", hp: 150, color: "#06b6d4", attack: 20 },
-    { level: 4, emoji: "👹", name: "오니 몬스터", hp: 200, color: "#ef4444", attack: 25 },
-    { level: 5, emoji: "🐉", name: "드래곤", hp: 260, color: "#f59e0b", attack: 30 },
-    { level: 6, emoji: "🦄", name: "유니콘", hp: 330, color: "#ec4899", attack: 36 },
-    { level: 7, emoji: "🧌", name: "트롤", hp: 410, color: "#10b981", attack: 42 },
-    { level: 8, emoji: "🧟", name: "좀비", hp: 500, color: "#84cc16", attack: 48 },
-    { level: 9, emoji: "👽", name: "에일리언", hp: 600, color: "#06b6d4", attack: 54 },
-    { level: 10, emoji: "🔥", name: "파이널 보스", hp: 700, color: "#f97316", attack: 60 }
+    { 
+        level: 1, 
+        emoji: "👹", 
+        name: "초성 도깨비", 
+        hp: 150, 
+        color: "#6366f1", 
+        attack: 12
+    },
+    { 
+        level: 2, 
+        emoji: "👻", 
+        name: "맞춤법 유령", 
+        hp: 200, 
+        color: "#8b5cf6", 
+        attack: 18
+    },
+    { 
+        level: 3, 
+        emoji: "🤖", 
+        name: "띄어쓰기 로봇", 
+        hp: 280, 
+        color: "#06b6d4", 
+        attack: 25
+    },
+    { 
+        level: 4, 
+        emoji: "🧌", 
+        name: "오타 트롤", 
+        hp: 380, 
+        color: "#ef4444", 
+        attack: 32
+    },
+    { 
+        level: 5, 
+        emoji: "🐉", 
+        name: "한자어 드래곤", 
+        hp: 500, 
+        color: "#f59e0b", 
+        attack: 40
+    },
+    { 
+        level: 6, 
+        emoji: "🦄", 
+        name: "동음이의어 유니콘", 
+        hp: 650, 
+        color: "#ec4899", 
+        attack: 48
+    },
+    { 
+        level: 7, 
+        emoji: "🧟", 
+        name: "문법 좀비", 
+        hp: 820, 
+        color: "#10b981", 
+        attack: 56
+    },
+    { 
+        level: 8, 
+        emoji: "👽", 
+        name: "외래어 에일리언", 
+        hp: 1000, 
+        color: "#84cc16", 
+        attack: 64
+    },
+    { 
+        level: 9, 
+        emoji: "🔥", 
+        name: "고급어휘 불사조", 
+        hp: 1200, 
+        color: "#f97316", 
+        attack: 72
+    },
+    { 
+        level: 10, 
+        emoji: "🫅🏻", 
+        name: "훈민정음 세종", 
+        hp: 1500, 
+        color: "#f59e0b", 
+        attack: 80
+    }
 ];
 
 const MONSTER_DIALOGUES = {
@@ -968,18 +1038,57 @@ function renderMyRanking(rankings, type) {
 
 async function saveRanking(data) {
     try {
-        if (typeof window.saveRankingToFirebase === 'function') {
-            const saved = await window.saveRankingToFirebase(data);
-            if (saved) {
-                console.log('📊 Firebase 랭킹 저장 완료');
+        // 중복 방지: 같은 deviceId와 비슷한 점수/시간의 기록이 있는지 확인
+        const deviceId = data.deviceId;
+        
+        if (typeof window.isFirebaseReady === 'function' && window.isFirebaseReady()) {
+            // Firebase에 저장
+            const rankingsRef = firebase.database().ref('rankings');
+            
+            // 기존 기록이 있는지 확인
+            const existingSnapshot = await rankingsRef.orderByChild('deviceId').equalTo(deviceId).once('value');
+            const existingRecords = existingSnapshot.val();
+            
+            if (existingRecords) {
+                // 같은 deviceId의 모든 기록을 가져와서 점수 비교
+                const records = Object.values(existingRecords);
+                const bestRecord = records.reduce((best, current) => {
+                    return current.score > best.score ? current : best;
+                }, {score: -1});
+                
+                // 현재 기록이 최고 기록보다 높을 때만 새로 저장
+                if (data.score > bestRecord.score) {
+                    const newRankingRef = rankingsRef.push();
+                    await newRankingRef.set({
+                        ...data,
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    console.log('✅ 새로운 최고 기록 Firebase 저장!');
+                    return true;
+                } else {
+                    console.log('📊 현재 기록이 최고 기록보다 낮아 저장하지 않음');
+                    return false;
+                }
+            } else {
+                // 첫 기록인 경우 저장
+                const newRankingRef = rankingsRef.push();
+                await newRankingRef.set({
+                    ...data,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+                console.log('✅ 첫 기록 Firebase 저장!');
+                return true;
             }
         }
         
+        // Firebase 사용 불가시 로컬 저장
         saveRankingToLocal(data);
+        return true;
         
     } catch (error) {
         console.error('❌ 랭킹 저장 실패:', error);
         saveRankingToLocal(data);
+        return false;
     }
 }
 
@@ -987,11 +1096,13 @@ function saveRankingToLocal(data) {
     const localRankings = JSON.parse(localStorage.getItem('kjd_local_rankings') || '[]');
     localRankings.push(data);
     
+    // 최대 50개만 저장
     if (localRankings.length > 50) {
         localRankings.splice(0, localRankings.length - 50);
     }
     
     localStorage.setItem('kjd_local_rankings', JSON.stringify(localRankings));
+    console.log('📊 로컬 랭킹 저장 완료');
 }
 
 // =================== 게임 초기화 ===================
@@ -1420,20 +1531,24 @@ function calculateDamage(time) {
     const extraMulti = CONFIG.COMBO_MULTIPLIER[Math.max(0, comboIdx)];
     
     let damage = (base + timeBonus) * comboMulti * extraMulti;
-    const stageMulti = 0.9 + (state.stage * 0.05);
+    
+    // 스테이지별 난이도 조정: 초반은 쉽게, 후반은 어렵게
+    const stageMulti = 0.8 + (state.stage * 0.06);  // 기존: 0.9 + (state.stage * 0.05)
     damage *= stageMulti;
     
     return Math.round(damage);
 }
-
 function calculatePlayerDamage() {
     const base = 15;
-    const stageMulti = 0.9 + (state.stage * 0.05);
+    
+    // 스테이지가 올라갈수록 몬스터 공격력 증가율 높임
+    const stageMulti = 0.85 + (state.stage * 0.07);  // 기존: 0.9 + (state.stage * 0.05)
     
     let damage = base * stageMulti;
     
+    // 콤보가 높을수록 플레이어가 더 큰 피해를 받음 (리스크 증가)
     if (state.player.combo >= 5) {
-        damage *= (1 + (state.player.combo * 0.1));
+        damage *= (1 + (state.player.combo * 0.08));  // 기존: 0.1
     }
     
     return Math.round(damage);
@@ -1517,7 +1632,7 @@ function defeatMonster() {
             vibrate([80, 40, 80, 40, 80]);
             createEffect('🎊', 50, 30, 'warning');
             
-            if (state.stage % 2 === 0 && state.player.potions < CONFIG.POTION_COUNT) {
+            if (state.stage % 3 === 0 && state.player.potions < CONFIG.POTION_COUNT) {
                 state.player.potions++;
                 el.potionCount.textContent = state.player.potions;
                 el.potionBtn.classList.remove('disabled');
@@ -1544,7 +1659,8 @@ async function gameEnd(isWin) {
     const accuracy = state.stats.total > 0 ? 
         Math.round((state.stats.correct / state.stats.total) * 100) : 0;
     
-    const rankingData = {
+    // 현재 게임 데이터 정의 (try 블록 밖에서)
+    const currentGameData = {
         nickname: userNickname || '익명',
         deviceId: getDeviceId(),
         score: state.player.score,
@@ -1570,10 +1686,11 @@ async function gameEnd(isWin) {
         }
     } catch (error) {
         console.error('랭킹 저장 실패:', error);
-        // 오류 시에도 로컬에 임시 저장
+        // currentGameData는 이미 정의되어 있음
         saveRankingToLocal(currentGameData);
     }
     
+    // 결과 화면 표시
     if (isWin) {
         el.finalScore.textContent = state.player.score.toLocaleString();
         el.finalCombo.textContent = state.player.maxCombo;
@@ -2071,6 +2188,44 @@ async function getBestRanking() {
                 return records.reduce((best, current) => {
                     return current.score > best.score ? current : best;
                 });
+            }
+        }
+        
+        // 로컬에서 최고 기록 찾기
+        const localRankings = JSON.parse(localStorage.getItem('kjd_local_rankings') || '[]');
+        const myRecords = localRankings.filter(record => record.deviceId === deviceId);
+        
+        if (myRecords.length > 0) {
+            return myRecords.reduce((best, current) => {
+                return current.score > best.score ? current : best;
+            });
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('최고 기록 조회 실패:', error);
+        return null;
+    }
+}
+
+async function getBestRanking() {
+    try {
+        const deviceId = getDeviceId();
+        
+        // Firebase에서 내 기록 조회
+        if (typeof window.isFirebaseReady === 'function' && window.isFirebaseReady()) {
+            const rankingsRef = firebase.database().ref('rankings');
+            const snapshot = await rankingsRef.orderByChild('deviceId').equalTo(deviceId).once('value');
+            const data = snapshot.val();
+            
+            if (data) {
+                const records = Object.values(data);
+                // 가장 높은 점수의 기록 반환
+                if (records.length > 0) {
+                    return records.reduce((best, current) => {
+                        return current.score > best.score ? current : best;
+                    });
+                }
             }
         }
         
