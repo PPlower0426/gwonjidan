@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>권지단 어휘대전</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; background: #0a0a0f; color: #fff; position: fixed; }
+        .game-container { width: 100%; height: 100vh; height: -webkit-fill-available; max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; background: #0a0a0f; overflow: hidden; }
+    </style>
+</head>
+<body>
+    <!-- 게임 컨테이너 -->
+    <div class="game-container">
+        
+        <!-- 최소화 헤더 -->
+        <div class="game-header">
+            <div class="header-main">
+                <span class="game-logo">⚔️ 권지단</span>
+                <div class="header-info">
+                    <span class="stage-info">스테이지 <strong id="currentStage">1</strong>/10</span>
+                    <span class="score-info">⭐ <strong id="currentScore">0</strong></span>
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="icon-btn ranking-header-btn" id="headerRankingBtn" title="랭킹">
+                    <i class="fas fa-trophy"></i>
+                </button>
+                <button class="menu-btn" id="pauseBtn"><i class="fas fa-bars"></i></button>
+            </div>
+        </div>
+        
+        <!-- 대결 영역 (초고밀도) -->
+        <div class="battle-area">
+            <!-- 몬스터 측 -->
+            <div class="monster-container">
+                <div class="combatant-body">
+                    <div class="avatar-circle monster-circle">
+                        <div class="monster-avatar" id="monsterAvatar">👹</div>
+                        <!-- 말풍선 표시기 (몬스터 말할 때 보임) -->
+                        <div class="speech-indicator" id="monsterSpeechIndicator">
+                            <div class="indicator-dot"></div>
+                            <div class="indicator-dot"></div>
+                            <div class="indicator-dot"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 대결 중앙선 -->
+            <div class="battle-center">
+                <div class="battle-line"></div>
+                <div class="quick-stats">
+                    <div class="mini-stat"><span class="stat-icon">🔥</span><span class="stat-val" id="comboStat">0</span></div>
+                    <div class="mini-stat"><span class="stat-icon">⏱️</span><span class="stat-val" id="timeStat">10</span></div>
+                    <div class="mini-stat"><span class="stat-icon">🎯</span><span class="stat-val" id="accuracyStat">100%</span></div>
+                    <div class="mini-stat"><span class="stat-icon">⚡</span><span class="stat-val" id="recordStat">0</span></div>
+                </div>
+            </div>
+            
+            <!-- 플레이어 측 -->
+            <div class="player-container">
+                <div class="combatant-body">
+                    <div class="avatar-circle player-circle">
+                        <div class="player-avatar" id="playerAvatar">👤</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 중앙 대사 영역 -->
+            <div class="center-speech">
+                <div class="speech-bubble" id="monsterSpeech">
+                    <div class="speech-content">너를 이기고 말겠다!</div>
+                    <div class="speech-arrow"></div>
+                </div>
+            </div>
+            
+            <!-- 이름 바 -->
+            <div class="name-bar">
+                <span class="name monster-name" id="monsterNameDisplay">초급 몬스터</span>
+                <span class="vs">⚔️</span>
+                <span class="name player-name">YOU</span>
+            </div>
+        </div>
+        
+        <!-- 체력 바 영역 (분리됨) -->
+        <div class="health-area">
+            <!-- 몬스터 체력 -->
+            <div class="health-container monster-health">
+                <div class="health-header">
+                    <span class="health-level" id="monsterLevel">Lv.1</span>
+                    <span class="health-text" id="monsterHpText">100/100</span>
+                </div>
+                <div class="health-bar-container">
+                    <div class="health-bar-background"></div>
+                    <div class="health-bar-fill monster-bar" id="monsterHpBar" style="width: 100%"></div>
+                </div>
+            </div>
+            
+            <!-- 플레이어 체력 -->
+            <div class="health-container player-health">
+                <div class="health-header">
+                    <span class="health-text" id="playerHpText">100/100</span>
+                    <span class="health-level">👤</span>
+                </div>
+                <div class="health-bar-container">
+                    <div class="health-bar-background"></div>
+                    <div class="health-bar-fill player-bar" id="playerHpBar" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 얇은 분리선 -->
+        <div class="separator-line"></div>
+        
+        <!-- 문제 카드 (초고밀도) -->
+        <div class="problem-card">
+            <div class="card-top">
+                <div class="time-display">
+                    <span class="time-icon">⏱️</span>
+                    <span class="time-text" id="timeText">10초</span>
+                </div>
+                <div class="card-title">어휘 문제</div>
+            </div>
+            
+            <div class="card-content">
+                <!-- 초성 표시 -->
+                <div class="hint-section">
+                    <div class="initial-display" id="initialDisplay">ㄱㅇ</div>
+                </div>
+                
+                <!-- 뜻 표시 -->
+                <div class="meaning-section">
+                    <div class="meaning-display" id="meaningDisplay">병원체가 몸속에 들어와 번식하는 것</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 입력 인터페이스 (초고밀도) -->
+        <div class="input-area">
+            <!-- 입력 액션 -->
+            <div class="input-actions">
+                <button class="icon-btn potion-btn" id="potionBtn">
+                    <i class="fas fa-flask"></i>
+                    <span class="potion-count" id="potionCount">3</span>
+                </button>
+                
+                <div class="input-field">
+                    <input type="text" 
+                           id="wordInput" 
+                           class="word-input"
+                           maxlength="2"
+                           placeholder="두글자 입력"
+                           autocapitalize="none"
+                           autocorrect="off"
+                           spellcheck="false">
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="icon-btn clear-btn" id="clearBtn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <button class="icon-btn submit-btn" id="submitBtn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 입력 안내 -->
+            <div class="input-guide">
+                <i class="fas fa-info-circle"></i> 한국어 키보드 사용 • 2글자 입력 후 제출
+            </div>
+        </div>
+        
+        <!-- 오버레이 화면들 -->
+        
+        <!-- 일시정지 화면 -->
+        <div class="overlay pause-screen">
+            <div class="overlay-content">
+                <div class="pause-header">
+                    <i class="fas fa-pause"></i>
+                    <h2>대결 일시정지</h2>
+                </div>
+                
+                <div class="pause-stats">
+                    <div class="pause-stat">
+                        <div class="stat-icon">⚔️</div>
+                        <div class="stat-info">
+                            <div class="stat-label">스테이지</div>
+                            <div class="stat-value" id="pauseStage">Lv.1</div>
+                        </div>
+                    </div>
+                    <div class="pause-stat">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-info">
+                            <div class="stat-label">점수</div>
+                            <div class="stat-value" id="pauseScore">0</div>
+                        </div>
+                    </div>
+                    <div class="pause-stat">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-info">
+                            <div class="stat-label">콤보</div>
+                            <div class="stat-value" id="pauseCombo">0</div>
+                        </div>
+                    </div>
+                    <div class="pause-stat">
+                        <div class="stat-icon">🧪</div>
+                        <div class="stat-info">
+                            <div class="stat-label">물약</div>
+                            <div class="stat-value" id="pausePotion">3</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pause-actions">
+                    <button class="btn primary" id="resumeBtn">
+                        <i class="fas fa-play"></i> 계속하기
+                    </button>
+                    <button class="btn secondary" id="restartBtn">
+                        <i class="fas fa-redo"></i> 다시하기
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 닉네임 설정 화면 -->
+        <div class="overlay nickname-screen">
+            <div class="overlay-content">
+                <div class="nickname-header">
+                    <div class="nickname-icon">👤</div>
+                    <h2>닉네임 설정</h2>
+                    <p class="nickname-sub">랭킹에 표시될 이름을 입력하세요</p>
+                </div>
+                
+                <div class="nickname-input-section">
+                    <input type="text" 
+                           id="nicknameInput" 
+                           class="nickname-input"
+                           maxlength="10"
+                           placeholder="최대 10자"
+                           autocapitalize="none"
+                           autocorrect="off">
+                    <div class="nickname-counter">
+                        <span id="nicknameCount">0</span>/10
+                    </div>
+                </div>
+                
+                <div class="nickname-notice">
+                    <i class="fas fa-info-circle"></i> 동일 기기에서는 한 번만 입력합니다
+                </div>
+                
+                <button class="btn primary" id="saveNicknameBtn">
+                    <i class="fas fa-save"></i> 저장하고 계속하기
+                </button>
+                
+                <button class="btn secondary" id="skipNicknameBtn">
+                    <i class="fas fa-forward"></i> 건너뛰기
+                </button>
+            </div>
+        </div>
+        
+        <!-- 랭킹 화면 -->
+        <div class="overlay ranking-screen">
+            <div class="overlay-content">
+                <div class="ranking-header">
+                    <div class="ranking-icon">🏆</div>
+                    <h2>랭킹</h2>
+                    <p class="ranking-sub">전체 상위 10명</p>
+                </div>
+                
+                <div class="ranking-controls">
+                    <button class="ranking-tab active" data-type="score">최고 점수</button>
+                    <button class="ranking-tab" data-type="stage">최고 단계</button>
+                    <button class="ranking-tab" data-type="combo">최고 콤보</button>
+                </div>
+                
+                <div class="ranking-list" id="rankingList">
+                    <div class="loading-rankings">
+                        <i class="fas fa-spinner fa-spin"></i> 랭킹 로딩 중...
+                    </div>
+                </div>
+                
+                <div class="my-ranking" id="myRanking">
+                    <div class="my-ranking-header">내 랭킹</div>
+                    <div class="my-ranking-info">
+                        <div class="my-rank-details">
+                            <div class="my-rank-name">게임을 플레이하면 랭킹에 등록됩니다</div>
+                            <div class="my-rank-score">아직 기록이 없습니다</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ranking-actions">
+                    <button class="btn secondary" id="refreshRankingBtn">
+                        <i class="fas fa-sync"></i> 새로고침
+                    </button>
+                    <button class="btn primary" id="closeRankingBtn">
+                        <i class="fas fa-times"></i> 닫기
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 시작 화면 -->
+        <div class="overlay start-screen">
+            <div class="overlay-content">
+                <div class="welcome-screen">
+                    <div class="title-section">
+                        <div class="title-icon">⚔️</div>
+                        <h1>권지단</h1>
+                        <h2>어휘대전</h2>
+                    </div>
+                    
+                    <div class="welcome-message">
+                        <p>초성과 뜻을 보고 단어를 맞춰<br>몬스터를 물리치는 고밀도 어휘 대결!</p>
+                    </div>
+                    
+                    <div class="game-features">
+                        <div class="feature"><span>🎯</span> 2글자 고급어휘</div>
+                        <div class="feature"><span>⚔️</span> 10단계 대결</div>
+                        <div class="feature"><span>🔥</span> 콤보 시스템</div>
+                        <div class="feature"><span>🧪</span> 물약 회복</div>
+                        <div class="feature"><span>🏆</span> 실시간 랭킹</div>
+                        <div class="feature"><span>👤</span> 닉네임 설정</div>
+                    </div>
+                    
+                    <button class="start-button" id="startBtn">
+                        <i class="fas fa-play"></i> 대결 시작
+                    </button>
+                    
+                    <button class="btn secondary ranking-button" id="rankingBtn" style="margin-bottom: 12px;">
+                        <i class="fas fa-trophy"></i> 랭킹 보기
+                    </button>
+                    
+                    <div class="game-guide">
+                        <h3><i class="fas fa-graduation-cap"></i> 게임 방법</h3>
+                        <ol>
+                            <li>초성과 뜻을 보고 2글자 단어 입력</li>
+                            <li>정답 → 몬스터 공격 / 오답 → 플레이어 피해</li>
+                            <li>콤보 유지 시 강력한 공격</li>
+                            <li>물약으로 체력 회복 가능</li>
+                            <li>10단계 몬스터 물리치면 승리!</li>
+                            <li>닉네임 설정 후 랭킹에 기록 등록</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 승리 화면 -->
+        <div class="overlay result-screen win-screen">
+            <div class="overlay-content">
+                <div class="result-header">
+                    <div class="result-icon">🏆</div>
+                    <h2>대결 승리!</h2>
+                    <p class="result-sub">모든 몬스터 물리침</p>
+                </div>
+                
+                <div class="result-stats">
+                    <div class="result-stat">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-info">
+                            <div class="stat-label">최종 점수</div>
+                            <div class="stat-value" id="finalScore">0</div>
+                        </div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-info">
+                            <div class="stat-label">최고 콤보</div>
+                            <div class="stat-value" id="finalCombo">0</div>
+                        </div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-info">
+                            <div class="stat-label">정확도</div>
+                            <div class="stat-value" id="finalAccuracy">100%</div>
+                        </div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-info">
+                            <div class="stat-label">클리어 시간</div>
+                            <div class="stat-value" id="finalTime">0초</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="victory-message">
+                    <p>축하합니다! 어휘 실력이 대단하네요!<br>랭킹에 기록이 저장되었습니다.</p>
+                </div>
+                
+                <button class="btn primary" id="playAgainBtn">
+                    <i class="fas fa-redo"></i> 다시하기
+                </button>
+                
+                <button class="btn secondary" id="viewRankingFromWinBtn" style="margin-top: 8px;">
+                    <i class="fas fa-trophy"></i> 랭킹 보기
+                </button>
+            </div>
+        </div>
+        
+        <!-- 패배 화면 -->
+        <div class="overlay result-screen lose-screen">
+            <div class="overlay-content">
+                <div class="result-header">
+                    <div class="result-icon">💀</div>
+                    <h2>대결 패배</h2>
+                    <p class="result-sub">체력 소진</p>
+                </div>
+                
+                <div class="result-stats">
+                    <div class="result-stat">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-info">
+                            <div class="stat-label">획득 점수</div>
+                            <div class="stat-value" id="loseScore">0</div>
+                        </div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-info">
+                            <div class="stat-label">최고 콤보</div>
+                            <div class="stat-value" id="loseCombo">0</div>
+                        </div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-info">
+                            <div class="stat-label">클리어 단계</div>
+                            <div class="stat-value" id="loseStage">1/10</div>
+                        </div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="stat-icon">⚔️</div>
+                        <div class="stat-info">
+                            <div class="stat-label">남은 몬스터</div>
+                            <div class="stat-value" id="loseMonsters">9마리</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="defeat-message">
+                    <p>아쉽네요! 어휘 실력을 더 키워서 다시 도전하세요!<br>랭킹에 기록이 저장되었습니다.</p>
+                </div>
+                
+                <button class="btn primary" id="restartFromLoseBtn">
+                    <i class="fas fa-redo"></i> 다시 도전
+                </button>
+                
+                <button class="btn secondary" id="viewRankingFromLoseBtn" style="margin-top: 8px;">
+                    <i class="fas fa-trophy"></i> 랭킹 보기
+                </button>
+            </div>
+        </div>
+        
+        <!-- 이펙트 레이어 -->
+        <div class="effects-layer"></div>
+        <div class="damage-layer"></div>
+        
+    </div>
+    
+    <!-- 사운드 요소들 -->
+    <audio id="soundCorrect" preload="auto"><source src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3" type="audio/mpeg"></audio>
+    <audio id="soundWrong" preload="auto"><source src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3" type="audio/mpeg"></audio>
+    <audio id="soundDamage" preload="auto"><source src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-emergency-alarm-1000.mp3" type="audio/mpeg"></audio>
+    <audio id="soundHit" preload="auto"><source src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-explosion-2759.mp3" type="audio/mpeg"></audio>
+    <audio id="soundCombo" preload="auto"><source src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3" type="audio/mpeg"></audio>
+    <audio id="soundVictory" preload="auto"><source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" type="audio/mpeg"></audio>
+    <audio id="soundPotion" preload="auto"><source src="https://assets.mixkit.co/sfx/preview/mixkit-magic-sparkle-3080.mp3" type="audio/mpeg"></audio>
+    
+    <!-- 게임 로직 -->
+    <script src="game.js"></script>
+    
+    <!-- Firebase 설정 및 초기화 -->
+    <script>
+    // Firebase 구성 정보 - gwonjidanwords 프로젝트
+    const firebaseConfig = {
+        apiKey: "AIzaSyApBB-QuQBOImgysqbfeffYBowEeERYRS4",
+        authDomain: "gwonjidanwords.firebaseapp.com",
+        databaseURL: "https://gwonjidanwords-default-rtdb.asia-southeast1.firebasedatabase.app/",
+        projectId: "gwonjidanwords",
+        storageBucket: "gwonjidanwords.firebasestorage.app",
+        messagingSenderId: "602593593346",
+        appId: "1:602593593346:web:17eeaba9ac91100942ff1b",
+        measurementId: "G-GRW0CC74MP"
+    };
+
+    // Firebase 초기화
+    let firebaseInitialized = false;
+    
+    try {
+        // Firebase 앱 초기화
+        firebase.initializeApp(firebaseConfig);
+        console.log("🔥 Firebase 앱 초기화 성공");
+        console.log("📊 Database URL: https://gwonjidanwords-default-rtdb.asia-southeast1.firebasedatabase.app/");
+        
+        // Analytics 초기화 (선택사항)
+        const analytics = firebase.analytics();
+        console.log("📈 Firebase Analytics 초기화 성공");
+        
+        firebaseInitialized = true;
+        
+        // 페이지 조회 이벤트 전송
+        analytics.logEvent('page_view', {
+            page_title: '권지단 어휘대전',
+            page_location: window.location.href,
+            game_name: '권지단 어휘대전'
+        });
+        
+        // 게임 시작 이벤트 함수
+        window.logGameEvent = function(eventName, eventParams = {}) {
+            if (firebaseInitialized) {
+                try {
+                    analytics.logEvent(eventName, eventParams);
+                } catch (error) {
+                    console.log("📊 이벤트 로깅 실패:", error);
+                }
+            }
+        };
+        
+    } catch (error) {
+        console.error("❌ Firebase 초기화 실패:", error);
+        firebaseInitialized = false;
+    }
+
+    // Firebase 상태 확인 함수
+    window.isFirebaseReady = function() {
+        return firebaseInitialized && typeof firebase.database === 'function';
+    };
+
+    // Firebase 데이터베이스 참조 함수
+    window.getFirebaseRef = function(path) {
+        if (window.isFirebaseReady()) {
+            return firebase.database().ref(path);
+        }
+        return null;
+    };
+    
+    // 랭킹 저장 함수
+    window.saveRankingToFirebase = async function(rankingData) {
+        if (!window.isFirebaseReady()) {
+            console.log("❌ Firebase가 준비되지 않아 랭킹 저장 불가");
+            return false;
+        }
+        
+        try {
+            const rankingsRef = firebase.database().ref('rankings');
+            const newRankingRef = rankingsRef.push();
+            await newRankingRef.set({
+                ...rankingData,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+            
+            console.log("✅ Firebase 랭킹 저장 성공:", rankingData.nickname, rankingData.score);
+            
+            // Analytics 이벤트
+            if (window.logGameEvent) {
+                window.logGameEvent('ranking_saved', {
+                    score: rankingData.score,
+                    stage: rankingData.stage,
+                    nickname_length: rankingData.nickname.length
+                });
+            }
+            
+            return true;
+        } catch (error) {
+            console.error("❌ Firebase 랭킹 저장 실패:", error);
+            return false;
+        }
+    };
+    
+    // 랭킹 조회 함수
+    window.loadRankingsFromFirebase = async function(type = 'score', limit = 50) {
+        if (!window.isFirebaseReady()) {
+            console.log("❌ Firebase가 준비되지 않아 랭킹 조회 불가");
+            return [];
+        }
+        
+        try {
+            const rankingsRef = firebase.database().ref('rankings');
+            const snapshot = await rankingsRef.orderByChild(type).limitToLast(limit).once('value');
+            const data = snapshot.val();
+            
+            if (data) {
+                const rankings = Object.entries(data).map(([key, value]) => ({
+                    id: key,
+                    ...value
+                }));
+                
+                // 내림차순 정렬
+                rankings.sort((a, b) => b[type] - a[type]);
+                
+                console.log(`✅ Firebase에서 ${rankings.length}개 랭킹 로드 성공`);
+                return rankings;
+            }
+            
+            return [];
+        } catch (error) {
+            console.error("❌ Firebase 랭킹 조회 실패:", error);
+            return [];
+        }
+    };
+    
+    console.log("✅ Firebase 설정 완료. 상태:", firebaseInitialized ? "활성화" : "비활성화");
+    </script>
+    
+    <!-- 모바일 최적화 -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const wordInput = document.getElementById('wordInput');
+        const clearBtn = document.getElementById('clearBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const potionBtn = document.getElementById('potionBtn');
+        
+        // 입력 처리
+        if (wordInput) {
+            wordInput.addEventListener('input', function() {
+                let text = this.value.replace(/[^가-힣ㄱ-ㅎ]/g, '');
+                if (text.length > 2) text = text.slice(0, 2);
+                this.value = text;
+            });
+            
+            wordInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (window.checkAnswer) window.checkAnswer();
+                }
+            });
+        }
+        
+        // 버튼 이벤트
+        if (clearBtn) clearBtn.addEventListener('click', function() {
+            wordInput.value = '';
+            wordInput.focus();
+        });
+        
+        if (submitBtn) submitBtn.addEventListener('click', function() {
+            if (window.checkAnswer) window.checkAnswer();
+        });
+        
+        if (potionBtn) potionBtn.addEventListener('click', function() {
+            if (window.usePotion) window.usePotion();
+        });
+        
+        // 닉네임 입력 처리
+        const nicknameInput = document.getElementById('nicknameInput');
+        const nicknameCount = document.getElementById('nicknameCount');
+        
+        if (nicknameInput && nicknameCount) {
+            // 저장된 닉네임이 있으면 표시
+            const savedNickname = localStorage.getItem('kjd_nickname');
+            if (savedNickname) {
+                nicknameInput.value = savedNickname;
+                nicknameCount.textContent = savedNickname.length;
+            }
+            
+            nicknameInput.addEventListener('input', function() {
+                let text = this.value.replace(/[^a-zA-Z0-9가-힣ㄱ-ㅎㅏ-ㅣ\s]/g, '');
+                if (text.length > 10) text = text.substring(0, 10);
+                this.value = text;
+                nicknameCount.textContent = text.length;
+            });
+        }
+        
+        // 닉네임 저장 버튼
+        const saveNicknameBtn = document.getElementById('saveNicknameBtn');
+        if (saveNicknameBtn) {
+            saveNicknameBtn.addEventListener('click', function() {
+                const nickname = nicknameInput.value.trim();
+                if (nickname.length > 0) {
+                    localStorage.setItem('kjd_nickname', nickname);
+                    
+                    // 장치 ID 생성 (없는 경우에만)
+                    if (!localStorage.getItem('kjd_device_id')) {
+                        const deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                        localStorage.setItem('kjd_device_id', deviceId);
+                    }
+                    
+                    document.querySelector('.nickname-screen').classList.remove('active');
+                    document.querySelector('.start-screen').classList.add('active');
+                    
+                    // Firebase 이벤트
+                    if (window.logGameEvent) {
+                        window.logGameEvent('nickname_set', {
+                            nickname_length: nickname.length
+                        });
+                    }
+                } else {
+                    alert('닉네임을 입력해주세요!');
+                    nicknameInput.focus();
+                }
+            });
+        }
+        
+        // 닉네임 건너뛰기 버튼
+        const skipNicknameBtn = document.getElementById('skipNicknameBtn');
+        if (skipNicknameBtn) {
+            skipNicknameBtn.addEventListener('click', function() {
+                localStorage.setItem('kjd_nickname', '익명');
+                
+                // 장치 ID 생성 (없는 경우에만)
+                if (!localStorage.getItem('kjd_device_id')) {
+                    const deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('kjd_device_id', deviceId);
+                }
+                
+                document.querySelector('.nickname-screen').classList.remove('active');
+                document.querySelector('.start-screen').classList.add('active');
+                
+                // Firebase 이벤트
+                if (window.logGameEvent) {
+                    window.logGameEvent('nickname_skipped');
+                }
+            });
+        }
+        
+        // 시작 시 입력 포커스
+        document.getElementById('startBtn').addEventListener('click', function() {
+            setTimeout(() => {
+                if (wordInput) {
+                    wordInput.focus();
+                    wordInput.value = '';
+                }
+            }, 300);
+            
+            // Firebase 이벤트
+            if (window.logGameEvent) {
+                window.logGameEvent('game_start');
+            }
+        });
+        
+        // 일시정지 해제 시 입력 포커스
+        document.getElementById('resumeBtn').addEventListener('click', function() {
+            setTimeout(() => {
+                if (wordInput) wordInput.focus();
+            }, 300);
+        });
+        
+        // 랭킹 버튼 이벤트
+        const rankingBtn = document.getElementById('rankingBtn');
+        const headerRankingBtn = document.getElementById('headerRankingBtn');
+        const viewRankingFromWinBtn = document.getElementById('viewRankingFromWinBtn');
+        const viewRankingFromLoseBtn = document.getElementById('viewRankingFromLoseBtn');
+        const closeRankingBtn = document.getElementById('closeRankingBtn');
+        const refreshRankingBtn = document.getElementById('refreshRankingBtn');
+        
+        // 랭킹 데이터 로드 함수
+        async function loadAndDisplayRankings() {
+            const rankingList = document.getElementById('rankingList');
+            const myRanking = document.getElementById('myRanking');
+            
+            if (!rankingList) return;
+            
+            rankingList.innerHTML = `
+                <div class="loading-rankings">
+                    <i class="fas fa-spinner fa-spin"></i> 랭킹 로딩 중...
+                </div>
+            `;
+            
+            try {
+                // 활성 탭 확인
+                const activeTab = document.querySelector('.ranking-tab.active');
+                const type = activeTab ? activeTab.dataset.type : 'score';
+                
+                // Firebase에서 랭킹 로드
+                const rankings = await window.loadRankingsFromFirebase(type, 10);
+                
+                if (rankings.length === 0) {
+                    rankingList.innerHTML = `
+                        <div class="no-rankings">
+                            <i class="fas fa-trophy"></i>
+                            <p>랭킹 데이터가 없습니다</p>
+                            <p class="sub">게임을 플레이하면 랭킹에 등록됩니다!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // 현재 사용자 정보
+                const currentDeviceId = localStorage.getItem('kjd_device_id');
+                const currentNickname = localStorage.getItem('kjd_nickname') || '익명';
+                
+                // 내 랭킹 찾기
+                let myRankIndex = -1;
+                let myRankData = null;
+                
+                for (let i = 0; i < rankings.length; i++) {
+                    if (rankings[i].deviceId === currentDeviceId) {
+                        myRankIndex = i;
+                        myRankData = rankings[i];
+                        break;
+                    }
+                }
+                
+                // 랭킹 목록 렌더링
+                let rankingHTML = '';
+                for (let i = 0; i < Math.min(rankings.length, 10); i++) {
+                    const rank = rankings[i];
+                    const isMe = rank.deviceId === currentDeviceId;
+                    
+                    let rankValue = '';
+                    switch(type) {
+                        case 'score': rankValue = rank.score.toLocaleString() + '점'; break;
+                        case 'stage': rankValue = rank.stage + '단계'; break;
+                        case 'combo': rankValue = rank.maxCombo + '콤보'; break;
+                    }
+                    
+                    rankingHTML += `
+                        <div class="ranking-item ${isMe ? 'my-rank' : ''}">
+                            <div class="rank-position ${i < 3 ? 'top-' + (i+1) : ''}">${i + 1}</div>
+                            <div class="rank-info">
+                                <div class="rank-name ${isMe ? 'me' : ''}">${rank.nickname}</div>
+                                <div class="rank-details">
+                                    <div class="rank-stat">
+                                        <i class="fas fa-${type === 'score' ? 'star' : type === 'stage' ? 'gamepad' : 'fire'}"></i>
+                                        ${rankValue}
+                                    </div>
+                                    <div class="rank-stat">
+                                        <i class="fas fa-check-circle"></i>
+                                        정확도: ${rank.accuracy || 0}%
+                                    </div>
+                                    <div class="rank-stat">
+                                        <i class="fas fa-clock"></i>
+                                        ${Math.floor(rank.gameTime / 60)}분
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                rankingList.innerHTML = rankingHTML;
+                
+                // 내 랭킹 정보 표시
+                if (myRankData) {
+                    let myRankValue = '';
+                    switch(type) {
+                        case 'score': myRankValue = myRankData.score.toLocaleString() + '점'; break;
+                        case 'stage': myRankValue = myRankData.stage + '단계'; break;
+                        case 'combo': myRankValue = myRankData.maxCombo + '콤보'; break;
+                    }
+                    
+                    myRanking.innerHTML = `
+                        <div class="my-ranking-header">내 랭킹 (${myRankIndex + 1}위)</div>
+                        <div class="my-ranking-info">
+                            <div class="my-rank-position">${myRankIndex + 1}</div>
+                            <div class="my-rank-details">
+                                <div class="my-rank-name">${myRankData.nickname}</div>
+                                <div class="my-rank-score">${myRankValue} • 정확도: ${myRankData.accuracy || 0}% • ${Math.floor(myRankData.gameTime / 60)}분</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    myRanking.innerHTML = `
+                        <div class="my-ranking-header">내 랭킹</div>
+                        <div class="my-ranking-info">
+                            <div class="my-rank-details">
+                                <div class="my-rank-name">${currentNickname}</div>
+                                <div class="my-rank-score">아직 랭킹에 등록되지 않았습니다</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Firebase 이벤트
+                if (window.logGameEvent) {
+                    window.logGameEvent('ranking_viewed', {
+                        ranking_type: type,
+                        ranking_count: rankings.length
+                    });
+                }
+                
+            } catch (error) {
+                console.error('랭킹 로드 실패:', error);
+                rankingList.innerHTML = `
+                    <div class="no-rankings">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>랭킹을 불러오는데 실패했습니다</p>
+                        <p class="sub">인터넷 연결을 확인해주세요</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function showRankingScreen() {
+            document.querySelectorAll('.overlay').forEach(overlay => {
+                overlay.classList.remove('active');
+            });
+            document.querySelector('.ranking-screen').classList.add('active');
+            
+            // 랭킹 데이터 로드
+            loadAndDisplayRankings();
+        }
+        
+        function closeRankingScreen() {
+            document.querySelector('.ranking-screen').classList.remove('active');
+            document.querySelector('.start-screen').classList.add('active');
+        }
+        
+        if (rankingBtn) rankingBtn.addEventListener('click', showRankingScreen);
+        if (headerRankingBtn) headerRankingBtn.addEventListener('click', showRankingScreen);
+        if (viewRankingFromWinBtn) viewRankingFromWinBtn.addEventListener('click', showRankingScreen);
+        if (viewRankingFromLoseBtn) viewRankingFromLoseBtn.addEventListener('click', showRankingScreen);
+        if (closeRankingBtn) closeRankingBtn.addEventListener('click', closeRankingScreen);
+        
+        // 랭킹 새로고침
+        if (refreshRankingBtn) {
+            refreshRankingBtn.addEventListener('click', loadAndDisplayRankings);
+        }
+        
+        // 랭킹 탭 전환
+        document.querySelectorAll('.ranking-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // 모든 탭 비활성화
+                document.querySelectorAll('.ranking-tab').forEach(t => {
+                    t.classList.remove('active');
+                });
+                // 현재 탭 활성화
+                this.classList.add('active');
+                
+                // 랭킹 데이터 다시 로드
+                loadAndDisplayRankings();
+            });
+        });
+        
+        // 키보드 감지
+        window.addEventListener('resize', function() {
+            if (window.innerHeight < window.outerHeight * 0.7) {
+                document.body.classList.add('keyboard-open');
+            } else {
+                document.body.classList.remove('keyboard-open');
+            }
+        });
+        
+        // 페이지 로드 시 닉네임 확인
+        setTimeout(() => {
+            const savedNickname = localStorage.getItem('kjd_nickname');
+            const savedDeviceId = localStorage.getItem('kjd_device_id');
+            
+            if (!savedNickname || !savedDeviceId) {
+                // 닉네임이 없으면 닉네임 화면 표시
+                document.querySelector('.start-screen').classList.remove('active');
+                document.querySelector('.nickname-screen').classList.add('active');
+            }
+        }, 500);
+    });
+    </script>
+</body>
+</html>
