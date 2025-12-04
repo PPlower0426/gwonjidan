@@ -866,22 +866,41 @@ function renderRankings(rankings, type) {
         return;
     }
     
+    // 사용자별 최고 기록만 필터링
+    const bestRecords = {};
+    rankings.forEach(rank => {
+        if (!bestRecords[rank.deviceId] || rank.score > bestRecords[rank.deviceId].score) {
+            bestRecords[rank.deviceId] = rank;
+        }
+    });
+    
+    // 배열로 변환 및 정렬
+    const uniqueRankings = Object.values(bestRecords)
+        .sort((a, b) => b[type] - a[type])
+        .slice(0, 10);
+    
     const myDeviceId = getDeviceId();
-    const rankingItems = rankings.slice(0, 10).map((rank, index) => {
+    const rankingItems = uniqueRankings.map((rank, index) => {
         const isMe = rank.deviceId === myDeviceId;
         const rankClass = isMe ? 'ranking-item my-rank' : 'ranking-item';
         const nameClass = isMe ? 'rank-name me' : 'rank-name';
         
         let typeValue = '';
         switch(type) {
-            case 'score': typeValue = rank.score.toLocaleString() + '점'; break;
-            case 'stage': typeValue = rank.stage + '단계'; break;
-            case 'combo': typeValue = rank.maxCombo + '콤보'; break;
+            case 'score': 
+                typeValue = rank.score.toLocaleString() + '점'; 
+                break;
+            case 'stage': 
+                typeValue = rank.stage + '단계'; 
+                break;
+            case 'combo': 
+                typeValue = rank.maxCombo + '콤보'; 
+                break;
         }
         
         return `
             <div class="${rankClass}">
-                <div class="rank-position top-${index + 1}">${index + 1}</div>
+                <div class="rank-position ${index < 3 ? 'top-' + (index + 1) : ''}">${index + 1}</div>
                 <div class="rank-info">
                     <div class="${nameClass}">${rank.nickname}</div>
                     <div class="rank-details">
@@ -1539,9 +1558,20 @@ async function gameEnd(isWin) {
     };
     
     try {
-        await saveRanking(rankingData);
+        // 기존 최고 기록 가져오기
+        const bestRecord = await getBestRanking();
+        
+        // 현재 기록이 최고 기록보다 좋은 경우에만 저장
+        if (!bestRecord || currentGameData.score > bestRecord.score) {
+            await saveRanking(currentGameData);
+            console.log('📊 새로운 최고 기록 저장!');
+        } else {
+            console.log('📊 최고 기록 갱신되지 않음');
+        }
     } catch (error) {
         console.error('랭킹 저장 실패:', error);
+        // 오류 시에도 로컬에 임시 저장
+        saveRankingToLocal(currentGameData);
     }
     
     if (isWin) {
@@ -2026,6 +2056,40 @@ function vibrate(pattern) {
         } catch (err) {}
     }
 }
+async function getBestRanking() {
+    try {
+        const deviceId = getDeviceId();
+        
+        if (typeof window.isFirebaseReady === 'function' && window.isFirebaseReady()) {
+            const rankingsRef = firebase.database().ref('rankings');
+            const snapshot = await rankingsRef.orderByChild('deviceId').equalTo(deviceId).once('value');
+            const data = snapshot.val();
+            
+            if (data) {
+                const records = Object.values(data);
+                // 가장 높은 점수의 기록 반환
+                return records.reduce((best, current) => {
+                    return current.score > best.score ? current : best;
+                });
+            }
+        }
+        
+        // 로컬에서 최고 기록 찾기
+        const localRankings = JSON.parse(localStorage.getItem('kjd_local_rankings') || '[]');
+        const myRecords = localRankings.filter(record => record.deviceId === deviceId);
+        
+        if (myRecords.length > 0) {
+            return myRecords.reduce((best, current) => {
+                return current.score > best.score ? current : best;
+            });
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('최고 기록 조회 실패:', error);
+        return null;
+    }
+}
 
 // =================== 유틸리티 함수 ===================
 function clearInput() {
@@ -2038,3 +2102,4 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('⚔️ 권지단 어휘대전 - 고밀도 버전 로딩...');
     init();
 });
+
