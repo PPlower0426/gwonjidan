@@ -1,4 +1,4 @@
-// game.js - 완전히 재구성된 깔끔한 버전
+// game.js - 최종 개선 버전
 
 // =================== 전역 변수 ===================
 const CONFIG = {
@@ -164,7 +164,7 @@ function showRandomSpeech(speaker = 'monster', type = 'normal') {
 }
 
 // =================== 이펙트 함수들 ===================
-function createEffect(emoji, x, y, type = 'primary') {
+function createEffect(emoji, x, y, type = 'primary', size = 'normal') {
     const layer = document.querySelector('.effects-layer');
     if (!layer) return;
     
@@ -173,10 +173,21 @@ function createEffect(emoji, x, y, type = 'primary') {
     effect.textContent = emoji;
     effect.style.left = `${x}%`;
     effect.style.top = `${y}%`;
-    effect.style.fontSize = '36px';
+    effect.style.fontSize = size === 'large' ? '64px' : size === 'small' ? '24px' : '36px';
     effect.style.transform = 'translate(-50%, -50%)';
     effect.style.zIndex = '20';
-    effect.style.animation = 'scaleIn 0.5s ease-out forwards';
+    effect.style.filter = 'drop-shadow(0 0 20px currentColor)';
+    
+    // 효과 타입에 따른 애니메이션
+    if (type === 'explosion') {
+        effect.style.animation = 'explode 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
+    } else if (type === 'float') {
+        effect.style.animation = 'float 2s ease-in-out forwards';
+    } else if (type === 'spin') {
+        effect.style.animation = 'spin 1s linear forwards';
+    } else {
+        effect.style.animation = 'scaleIn 0.5s ease-out forwards';
+    }
     
     layer.appendChild(effect);
     
@@ -184,7 +195,140 @@ function createEffect(emoji, x, y, type = 'primary') {
         if (effect.parentNode) {
             effect.remove();
         }
-    }, 800);
+    }, type === 'explosion' ? 800 : 1200);
+}
+
+function createComboEffect(combo) {
+    const centerX = 50, centerY = 50;
+    
+    if (combo >= 3) {
+        createEffect('🔥', centerX, centerY, 'explosion', 'large');
+        playSound('combo');
+        
+        // 콤보 수 표시
+        const comboText = document.createElement('div');
+        comboText.className = 'combo-display';
+        comboText.textContent = `${combo} COMBO!`;
+        comboText.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 72px;
+            font-weight: 900;
+            color: #f59e0b;
+            text-shadow: 0 0 30px rgba(245, 158, 11, 0.9), 0 0 60px rgba(245, 158, 11, 0.6);
+            z-index: 1000;
+            pointer-events: none;
+            animation: comboExplosion 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        `;
+        
+        const effectsLayer = document.querySelector('.effects-layer');
+        if (effectsLayer) {
+            effectsLayer.appendChild(comboText);
+            setTimeout(() => comboText.remove(), 1000);
+        }
+    }
+    
+    if (combo >= 5) {
+        // 추가 효과
+        for (let i = 0; i < 8; i++) {
+            const angle = (i * 45) * Math.PI / 180;
+            const x = centerX + Math.cos(angle) * 30;
+            const y = centerY + Math.sin(angle) * 30;
+            
+            setTimeout(() => {
+                createEffect('⭐', x, y, 'float', 'small');
+            }, i * 100);
+        }
+    }
+}
+
+function createAttackEffect(fromX, fromY, toX, toY, color = '#ef4444') {
+    const layer = document.querySelector('.effects-layer');
+    if (!layer) return;
+    
+    const attackPath = document.createElement('div');
+    attackPath.className = 'attack-path';
+    attackPath.style.cssText = `
+        position: absolute;
+        top: ${fromY}%;
+        left: ${fromX}%;
+        width: 0;
+        height: 4px;
+        background: linear-gradient(90deg, ${color}, transparent);
+        transform-origin: left center;
+        z-index: 5;
+        animation: attackBeam 0.3s ease-out forwards;
+    `;
+    
+    layer.appendChild(attackPath);
+    
+    setTimeout(() => {
+        if (attackPath.parentNode) attackPath.remove();
+    }, 500);
+}
+
+function createRippleEffect(x, y, color) {
+    const ripple = document.createElement('div');
+    ripple.style.cssText = `
+        position: absolute;
+        left: ${x}%;
+        top: ${y}%;
+        width: 20px;
+        height: 20px;
+        border: 2px solid ${color};
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        animation: ripple 1s linear forwards;
+        z-index: 10;
+    `;
+    
+    const effectsLayer = document.querySelector('.effects-layer');
+    if (effectsLayer) {
+        effectsLayer.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 1000);
+    }
+}
+
+function createShootingStar(startX, startY, endX, endY) {
+    const star = document.createElement('div');
+    star.textContent = '✨';
+    star.style.cssText = `
+        position: absolute;
+        left: ${startX}%;
+        top: ${startY}%;
+        font-size: 24px;
+        z-index: 5;
+        animation: shootingStar 1s linear forwards;
+    `;
+    
+    const keyframes = `
+        @keyframes shootingStar {
+            0% {
+                transform: translate(0, 0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(${endX - startX}%, ${endY - startY}%);
+                opacity: 0;
+            }
+        }
+    `;
+    
+    // 스타일 시트에 키프레임 추가
+    const style = document.createElement('style');
+    style.textContent = keyframes;
+    document.head.appendChild(style);
+    
+    const effectsLayer = document.querySelector('.effects-layer');
+    if (effectsLayer) {
+        effectsLayer.appendChild(star);
+        setTimeout(() => {
+            star.remove();
+            style.remove();
+        }, 1000);
+    }
 }
 
 function shakeScreen(intensity = 5, duration = 300) {
@@ -351,7 +495,10 @@ function getDefaultWords() {
         { word: "감정이입", hint: "ㄱㅈㅇㅇ", meaning: "다른 사람의 감정을 자신의 것처럼 느끼는 것", difficulty: 5, length: 4 },
         { word: "사회계약", hint: "ㅅㅎㄱㅇ", meaning: "국가와 국민 사이의 암묵적인 약속", difficulty: 5, length: 4 },
         { word: "공사구분", hint: "ㄱㅅㄱㅂ", meaning: "공적인 일과 사적인 일을 구분하는 것", difficulty: 7, length: 4 },
-        { word: "다양성인정", hint: "ㄷㅇㅅㅇㅈ", meaning: "다양한 것을 인정하는 태도", difficulty: 8, length: 5 }
+        { word: "다양성인정", hint: "ㄷㅇㅅㅇㅈ", meaning: "다양한 것을 인정하는 태도", difficulty: 8, length: 5 },
+        { word: "가야금", hint: "ㄱㅇㄱ", meaning: "한국의 전통 현악기", difficulty: 2, length: 3 },
+        { word: "아래아", hint: "ㅇㄹㅇ", meaning: "한글 옛글자로 아래에 붙이는 점", difficulty: 3, length: 3 },
+        { word: "야여요유", hint: "ㅇㅇㅇㅇ", meaning: "천지인 키보드 연습 단어", difficulty: 4, length: 4 }
     ];
 }
 
@@ -369,15 +516,14 @@ function setupEvents() {
     // 입력 컨트롤
     if (el.potionBtn) el.potionBtn.addEventListener('click', usePotion);
     
-    // 천지인 포함 입력 처리 - 모든 한글 및 특수문자 허용
+    // 천지인 포함 입력 처리 - 확장된 한글 입력 허용
     if (el.input) {
         el.input.addEventListener('input', function(e) {
-            // 모든 한글 문자와 기본 특수문자 허용
-            // 아래아(ㆍ)는 U+318D, 가운데점(·)은 U+00B7
+            // 천지인 입력 허용: 모든 한글, 자음, 모음, 아래아(ㆍ), 가운데점(·)
             let text = this.value;
             
-            // 아래아와 가운데점을 포함한 한글 문자만 허용
-            text = text.replace(/[^가-힣ㄱ-ㅎㅏ-ㅣㆍ·\s]/g, '');
+            // 허용할 문자: 모든 한글, 자음/모음, 아래아(U+318D), 가운데점(U+00B7, U+2027)
+            text = text.replace(/[^\u3131-\u318E\uAC00-\uD7A3\u1100-\u11FF\uA960-\uA97C\uD7B0-\uD7FF\u318D\u00B7\u2027]/g, '');
             
             if (text.length > 5) text = text.substring(0, 5);
             this.value = text;
@@ -387,6 +533,11 @@ function setupEvents() {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 checkAnswer();
+            }
+            
+            // 천지인 특수 문자 입력 지원
+            if (e.key === '.' || e.key === '·' || e.key === 'ㆍ') {
+                // 기본 동작 허용
             }
         });
     }
@@ -424,6 +575,22 @@ async function init() {
 function startGame() {
     console.log('⚔️ 대결 시작!');
     
+    // 시작 효과
+    createEffect('⚔️', 50, 50, 'explosion', 'large');
+    shakeScreen(5, 500);
+    
+    // 별똥별 효과
+    for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+            const startX = Math.random() * 100;
+            const startY = -10;
+            const endX = startX + (Math.random() * 40 - 20);
+            const endY = 110;
+            
+            createShootingStar(startX, startY, endX, endY);
+        }, i * 200);
+    }
+    
     resetState();
     spawnMonster(1);
     newQuestion();
@@ -440,7 +607,6 @@ function startGame() {
     
     showRandomSpeech('monster', 'normal');
     playSound('correct');
-    createEffect('⚔️', 50, 50, 'primary');
 }
 
 function resetState() {
@@ -536,19 +702,24 @@ function startTimer() {
 }
 
 function updateTime() {
-    if (el.timeDisplay) el.timeDisplay.textContent = state.timeLeft;
-    
-    if (state.timeLeft <= 3) {
-        if (el.timeDisplay) {
+    if (el.timeDisplay) {
+        el.timeDisplay.textContent = state.timeLeft;
+        
+        // 시간에 따른 효과
+        if (state.timeLeft <= 3) {
+            el.timeDisplay.classList.add('critical');
             el.timeDisplay.style.color = '#ef4444';
-            el.timeDisplay.style.animation = 'pulse 0.5s infinite';
-        }
-    } else if (state.timeLeft <= 5) {
-        if (el.timeDisplay) el.timeDisplay.style.color = '#f59e0b';
-    } else {
-        if (el.timeDisplay) {
+            
+            // 긴박한 효과
+            if (state.timeLeft <= 2) {
+                shakeScreen(2, 100);
+            }
+        } else if (state.timeLeft <= 5) {
+            el.timeDisplay.classList.remove('critical');
+            el.timeDisplay.style.color = '#f59e0b';
+        } else {
+            el.timeDisplay.classList.remove('critical');
             el.timeDisplay.style.color = '';
-            el.timeDisplay.style.animation = '';
         }
     }
 }
@@ -615,6 +786,10 @@ function checkAnswer() {
 function correct(time, wordLength) {
     console.log(`✅ 정답! (${wordLength}글자)`);
     
+    // 정답 효과
+    createEffect('✨', 50, 50, 'primary', 'large');
+    createRippleEffect(50, 50, '#10b981');
+    
     state.stats.correct++;
     state.player.fastTime = Math.min(state.player.fastTime, time);
     
@@ -622,10 +797,7 @@ function correct(time, wordLength) {
     state.player.maxCombo = Math.max(state.player.maxCombo, state.player.combo);
     
     // 콤보 효과
-    if (state.player.combo >= 3) {
-        playSound('combo');
-        createEffect('🔥', 50, 50, 'warning');
-    }
+    createComboEffect(state.player.combo);
     
     // 점수 계산
     const lengthMultiplier = CONFIG.LENGTH_MULTIPLIER[wordLength] || 1.0;
@@ -668,6 +840,7 @@ function correct(time, wordLength) {
     }
     
     // 공격 효과
+    createAttackEffect(70, 50, 30, 50, '#10b981');
     shakeScreen(6, 400);
     showDamageNumber(finalDamage, 50, 50, defended ? '#6366f1' : '#ef4444');
     showRandomSpeech('player', 'hit');
@@ -693,6 +866,10 @@ function correct(time, wordLength) {
 
 function wrong(time) {
     console.log('❌ 오답!');
+    
+    // 오답 효과
+    createEffect('💥', 50, 50, 'explosion', 'normal');
+    createRippleEffect(50, 50, '#ef4444');
     
     resetCombo();
     
@@ -765,8 +942,18 @@ function usePotion() {
     const healAmount = CONFIG.POTION_HEAL;
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + healAmount);
     
+    // 물약 효과 강화
     playSound('potion');
-    createEffect('🧪', 50, 50, 'potion');
+    createEffect('🧪', 50, 50, 'explosion', 'large');
+    
+    // 회복 효과
+    for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+            const x = 30 + Math.random() * 40;
+            const y = 30 + Math.random() * 40;
+            createEffect('💚', x, y, 'float', 'small');
+        }, i * 150);
+    }
     
     updateHpDisplay();
     if (el.potionCount) el.potionCount.textContent = state.player.potions;
@@ -783,12 +970,30 @@ function defeatMonster() {
     
     showRandomSpeech('monster', 'death');
     
+    // 처치 효과 강화
+    for (let i = 0; i < 12; i++) {
+        setTimeout(() => {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 20 + Math.random() * 30;
+            const x = 50 + Math.cos(angle) * distance;
+            const y = 50 + Math.sin(angle) * distance;
+            
+            createEffect('💥', x, y, 'explosion', 'small');
+        }, i * 50);
+    }
+    
+    // 별 효과
+    for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+            const x = 20 + Math.random() * 60;
+            const y = 20 + Math.random() * 60;
+            createEffect('⭐', x, y, 'float', 'small');
+        }, i * 100);
+    }
+    
     const stageBonus = state.stage * CONFIG.SCORE_STAGE;
     state.player.score += stageBonus;
     state.stats.cleared++;
-    
-    createEffect('💥', 50, 50, 'danger');
-    createEffect('⭐', 50, 50, 'warning');
     
     setTimeout(() => {
         state.stage++;
