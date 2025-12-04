@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>권지단 어휘대전</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 글로벌 스타일 - 압축적 */
+        :root {
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            color: #fff;
+            position: fixed;
+        }
+        
+        .game-container {
+            width: 100%;
+            height: 100vh;
+            height: -webkit-fill-available;
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+            overflow: hidden;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        
+        <!-- 압축형 헤더 -->
+        <div class="game-header">
+            <div class="header-compact">
+                <div class="compact-logo">
+                    <span class="logo-symbol">⚔️</span>
+                    <div class="logo-texts">
+                        <div class="logo-main">권지단 어휘대전</div>
+                    </div>
+                </div>
+                <div class="header-stats">
+                    <div class="stage-display">
+                        <span class="stage-icon">⚔️</span>
+                        <span class="stage-value">1</span>
+                        <span class="stage-total">/10</span>
+                    </div>
+                    <div class="score-display">
+                        <span class="score-icon">⭐</span>
+                        <span class="score-value">0</span>
+                    </div>
+                </div>
+            </div>
+            <button class="compact-menu-btn" id="pauseBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <!-- 몬스터 vs 플레이어 대결 구도 -->
+        <div class="battle-stage">
+            <!-- 몬스터 말풍선 -->
+            <div class="speech-bubble monster-speech" id="monsterSpeech">
+                너를 이기고 말겠다!
+            </div>
+            
+            <!-- 몬스터 측 -->
+            <div class="combatant monster-side">
+                <div class="combatant-header">
+                    <div class="combatant-name">
+                        <span class="level-badge">Lv.1</span>
+                        <span class="name-text">초급 몬스터</span>
+                    </div>
+                    <div class="combatant-hp">
+                        <div class="hp-bar">
+                            <div class="hp-fill" style="width: 100%">
+                                <div class="hp-glow"></div>
+                            </div>
+                        </div>
+                        <div class="hp-text">100</div>
+                    </div>
+                </div>
+                <div class="combatant-body">
+                    <div class="combatant-avatar monster-avatar" id="monsterAvatar">👹</div>
+                    <div class="status-effects">
+                        <div class="effect" id="monsterEffect"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 대결 중앙선 -->
+            <div class="battle-line"></div>
+            
+            <!-- 플레이어 측 -->
+            <div class="combatant player-side">
+                <div class="combatant-header">
+                    <div class="combatant-name">
+                        <span class="level-badge">YOU</span>
+                    </div>
+                    <div class="combatant-hp">
+                        <div class="hp-text">100</div>
+                        <div class="hp-bar">
+                            <div class="hp-fill" style="width: 100%">
+                                <div class="hp-glow"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="combatant-body">
+                    <div class="combatant-avatar player-avatar" id="playerAvatar">👤</div>
+                    <div class="status-effects">
+                        <div class="effect" id="playerEffect"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 전투 메시지 -->
+            <div class="battle-message" id="battleMessage"></div>
+        </div>
+        
+        <!-- 콤보/기록 표시 -->
+        <div class="quick-stats">
+            <div class="stat-item">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-data">
+                    <div class="stat-value" id="comboValue">0</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-data">
+                    <div class="stat-value" id="recordValue">0</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-data">
+                    <div class="stat-value" id="accuracyValue">100%</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-data">
+                    <div class="stat-value" id="timeLeft">10</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 문제 카드 -->
+        <div class="problem-card">
+            <div class="card-header">
+                <div class="time-indicator">
+                    <div class="time-bar">
+                        <div class="time-fill" style="width: 100%"></div>
+                    </div>
+                    <div class="time-label" id="timeLabel">10초</div>
+                </div>
+                <div class="card-label">어휘문제</div>
+            </div>
+            
+            <div class="card-content">
+                <div class="hint-section">
+                    <div class="hint-label">초성 힌트</div>
+                    <div class="hint-text" id="initialText">ㄱㅇ</div>
+                </div>
+                
+                <div class="meaning-section">
+                    <div class="meaning-label">뜻</div>
+                    <div class="meaning-text" id="meaningText">병원체가 몸속에 들어와 번식하는 것</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 입력 인터페이스 -->
+        <div class="input-interface">
+            <div class="input-actions">
+                <button class="action-btn potion-btn" id="potionBtn">
+                    <i class="fas fa-flask"></i>
+                    <span class="potion-count" id="potionCount">3</span>
+                </button>
+                
+                <div class="input-field-container">
+                    <input type="text" 
+                           id="wordInput" 
+                           class="word-input"
+                           maxlength="2"
+                           placeholder="두글자 입력"
+                           autocapitalize="none"
+                           autocorrect="off"
+                           spellcheck="false">
+                    <div class="input-counter">
+                        <span id="charCount">0</span>/2
+                    </div>
+                </div>
+                
+                <button class="action-btn clear-btn" id="clearBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="submit-section">
+                <button class="submit-btn" id="submitBtn">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>정답 제출</span>
+                </button>
+            </div>
+            
+            <div class="input-hint">
+                <i class="fas fa-keyboard"></i> 한국어 키보드 사용
+            </div>
+        </div>
+        
+        <!-- 오버레이 화면들 -->
+        
+        <!-- 시작 화면 -->
+        <div class="overlay start-screen active">
+            <div class="overlay-content">
+                <div class="title-animation">
+                    <div class="title-icon">⚔️</div>
+                    <h1 class="game-title">권지단</h1>
+                    <h2 class="game-subtitle">어휘대전</h2>
+                </div>
+                
+                <div class="welcome-card">
+                    <div class="welcome-message">
+                        <p>초성과 뜻을 보고 단어를 맞춰<br>몬스터를 물리치는 어휘 대결!</p>
+                    </div>
+                    
+                    <div class="features-grid">
+                        <div class="feature">
+                            <div class="feature-icon">🎯</div>
+                            <div class="feature-text">2글자 고급어휘</div>
+                        </div>
+                        <div class="feature">
+                            <div class="feature-icon">⚔️</div>
+                            <div class="feature-text">10단계 대결</div>
+                        </div>
+                        <div class="feature">
+                            <div class="feature-icon">🔥</div>
+                            <div class="feature-text">콤보 시스템</div>
+                        </div>
+                        <div class="feature">
+                            <div class="feature-icon">🧪</div>
+                            <div class="feature-text">물약 회복</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="start-button" id="startBtn">
+                    <i class="fas fa-play"></i>
+                    <span>대결 시작</span>
+                </button>
+                
+                <div class="quick-guide">
+                    <h3><i class="fas fa-graduation-cap"></i> 게임 방법</h3>
+                    <ol class="guide-steps">
+                        <li>초성과 뜻을 보고 2글자 단어 입력</li>
+                        <li>정답 → 몬스터 공격 / 오답 → 플레이어 피해</li>
+                        <li>콤보 유지 시 강력한 공격</li>
+                        <li>물약으로 체력 회복 가능</li>
+                        <li>10단계 몬스터 모두 물리치면 승리!</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 일시정지 화면 -->
+        <div class="overlay pause-screen">
+            <div class="overlay-content">
+                <div class="pause-header">
+                    <i class="fas fa-pause"></i>
+                    <h2>대결 일시정지</h2>
+                </div>
+                
+                <div class="pause-stats-grid">
+                    <div class="pause-stat">
+                        <div class="stat-icon">⚔️</div>
+                        <div class="stat-info">
+                            <div class="stat-label">현재 스테이지</div>
+                            <div class="stat-value" id="currentStageStat">Lv.1</div>
+                        </div>
+                    </div>
+                    <div class="pause-stat">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-info">
+                            <div class="stat-label">점수</div>
+                            <div class="stat-value" id="currentScoreStat">0점</div>
+                        </div>
+                    </div>
+                    <div class="pause-stat">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-info">
+                            <div class="stat-label">콤보</div>
+                            <div class="stat-value" id="currentComboStat">0콤보</div>
+                        </div>
+                    </div>
+                    <div class="pause-stat">
+                        <div class="stat-icon">🧪</div>
+                        <div class="stat-info">
+                            <div class="stat-label">남은 물약</div>
+                            <div class="stat-value" id="currentPotionStat">3개</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pause-actions">
+                    <button class="action-btn primary-btn" id="resumeBtn">
+                        <i class="fas fa-play"></i>
+                        계속하기
+                    </button>
+                    <button class="action-btn secondary-btn" id="restartBtn">
+                        <i class="fas fa-redo"></i>
+                        다시하기
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 승리 화면 -->
+        <div class="overlay result-screen win-screen">
+            <div class="overlay-content">
+                <div class="result-header">
+                    <div class="result-icon">🏆</div>
+                    <h2>대결 승리!</h2>
+                    <p class="result-sub">모든 몬스터를 물리쳤습니다</p>
+                </div>
+                
+                <div class="result-stats-grid">
+                    <div class="result-stat">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-details">
+                            <div class="stat-name">최종 점수</div>
+                            <div class="stat-number" id="finalScore">0</div>
+                        </div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-details">
+                            <div class="stat-name">최고 콤보</div>
+                            <div class="stat-number" id="highestCombo">0</div>
+                        </div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-details">
+                            <div class="stat-name">정확도</div>
+                            <div class="stat-number" id="finalAccuracy">100%</div>
+                        </div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-details">
+                            <div class="stat-name">클리어 시간</div>
+                            <div class="stat-number" id="clearTime">0초</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="victory-celebration">
+                    <p>축하합니다! 어휘 실력이 대단하네요!</p>
+                    <div class="celebration-effects"></div>
+                </div>
+                
+                <div class="result-actions">
+                    <button class="action-btn primary-btn" id="playAgainBtn">
+                        <i class="fas fa-redo"></i>
+                        다시하기
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 패배 화면 -->
+        <div class="overlay result-screen lose-screen">
+            <div class="overlay-content">
+                <div class="result-header">
+                    <div class="result-icon">💀</div>
+                    <h2>대결 패배</h2>
+                    <p class="result-sub">체력을 모두 소진했습니다</p>
+                </div>
+                
+                <div class="result-stats-grid">
+                    <div class="result-stat">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-details">
+                            <div class="stat-name">획득 점수</div>
+                            <div class="stat-number" id="finalScoreLose">0</div>
+                        </div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-details">
+                            <div class="stat-name">최고 콤보</div>
+                            <div class="stat-number" id="highestComboLose">0</div>
+                        </div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-details">
+                            <div class="stat-name">클리어 단계</div>
+                            <div class="stat-number" id="clearedStages">1/10</div>
+                        </div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="stat-icon">⚔️</div>
+                        <div class="stat-details">
+                            <div class="stat-name">남은 몬스터</div>
+                            <div class="stat-number" id="remainingMonsters">9마리</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="defeat-message">
+                    <p>아쉽네요! 어휘 실력을 더 키워서 다시 도전하세요!</p>
+                    <div class="encouragement">💪 포기하지 마세요!</div>
+                </div>
+                
+                <div class="result-actions">
+                    <button class="action-btn primary-btn" id="restartFromLoseBtn">
+                        <i class="fas fa-redo"></i>
+                        다시 도전
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 이펙트 레이어 -->
+        <div class="effects-layer"></div>
+        
+        <!-- 데미지 표시 레이어 -->
+        <div class="damage-layer"></div>
+        
+    </div>
+    
+    <!-- 사운드 요소 -->
+    <audio id="soundCorrect" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="soundWrong" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="soundDamage" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-emergency-alarm-1000.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="soundMonsterHit" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-explosion-2759.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="soundLevelUp" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="soundCombo" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="soundVictory" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="soundPotion" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-magic-sparkle-3080.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- JavaScript 파일 -->
+    <script src="game.js"></script>
+    
+    <script>
+        // 모바일 최적화 스크립트
+        document.addEventListener('DOMContentLoaded', function() {
+            // iOS 안전 영역 대응
+            const setVH = () => {
+                const vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty('--vh', `${vh}px`);
+            };
+            setVH();
+            
+            // 입력 필드 설정
+            const wordInput = document.getElementById('wordInput');
+            const charCount = document.getElementById('charCount');
+            const clearBtn = document.getElementById('clearBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const potionBtn = document.getElementById('potionBtn');
+            
+            // 게임 시작 시 입력 필드 포커스
+            document.getElementById('startBtn').addEventListener('click', function() {
+                setTimeout(() => {
+                    if (wordInput) {
+                        wordInput.focus();
+                        wordInput.value = '';
+                        charCount.textContent = '0';
+                    }
+                }, 500);
+            });
+            
+            // 일시정지 해제 시 입력 필드 포커스
+            document.getElementById('resumeBtn').addEventListener('click', function() {
+                setTimeout(() => {
+                    if (wordInput) {
+                        wordInput.focus();
+                    }
+                }, 300);
+            });
+            
+            // 입력 길이 표시
+            if (wordInput) {
+                wordInput.addEventListener('input', function() {
+                    const length = this.value.length;
+                    charCount.textContent = length;
+                    
+                    // 한글만 허용
+                    let text = this.value.replace(/[^가-힣ㄱ-ㅎ]/g, '');
+                    if (text.length > 2) {
+                        text = text.slice(0, 2);
+                    }
+                    this.value = text;
+                    charCount.textContent = text.length;
+                });
+                
+                // 엔터 키 이벤트
+                wordInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (window.checkAnswer) {
+                            window.checkAnswer();
+                        }
+                    }
+                });
+            }
+            
+            // 지우기 버튼
+            if (clearBtn && wordInput) {
+                clearBtn.addEventListener('click', function() {
+                    wordInput.value = '';
+                    charCount.textContent = '0';
+                    wordInput.focus();
+                });
+            }
+            
+            // 제출 버튼
+            if (submitBtn) {
+                submitBtn.addEventListener('click', function() {
+                    if (window.checkAnswer) {
+                        window.checkAnswer();
+                    }
+                });
+            }
+            
+            // 물약 버튼
+            if (potionBtn) {
+                potionBtn.addEventListener('click', function() {
+                    if (window.usePotion) {
+                        window.usePotion();
+                    }
+                });
+            }
+            
+            // 화면 크기 조정
+            window.addEventListener('resize', setVH);
+            
+            // 터치 디바이스 최적화
+            if ('ontouchstart' in window) {
+                document.body.classList.add('touch-device');
+            }
+            
+            // 로딩 완료
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+            }, 800);
+        });
+    </script>
+</body>
+</html>

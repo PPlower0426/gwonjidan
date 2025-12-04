@@ -1,0 +1,184 @@
+{
+  "words": [
+    {
+      "word": "감염",
+      "hint": "ㄱㅇ",
+      "meaning": "병원체가 몸속에 들어와 번식하는 것",
+      "difficulty": 1
+    },
+    {
+      "word": "모순",
+      "hint": "ㅁㅅ",
+      "meaning": "서로 맞지 않아 서로 어긋나는 상태",
+      "difficulty": 1
+    },
+    {
+      "word": "통찰",
+      "hint": "ㅌㅊ",
+      "meaning": "사물의 이치나 내용을 꿰뚫어 봄",
+      "difficulty": 2
+    },
+    {
+      "word": "절제",
+      "hint": "ㅈㅈ",
+      "meaning": "감정이나 욕망을 적당히 제한함",
+      "difficulty": 2
+    },
+    {
+      "word": "개념",
+      "hint": "ㄱㄴ",
+      "meaning": "사물에 대한 보편적인 생각이나 관념",
+      "difficulty": 1
+    },
+    {
+      "word": "가설",
+      "hint": "ㄱㅅ",
+      "meaning": "아직 증명되지 않은 잠정적인 주장",
+      "difficulty": 2
+    },
+    {
+      "word": "담보",
+      "hint": "ㄷㅂ",
+      "meaning": "채무이행을 확보하기 위한 보증",
+      "difficulty": 3
+    },
+    {
+      "word": "법칙",
+      "hint": "ㅂㅈ",
+      "meaning": "변하지 않고 꼭 지켜야 하는 규범",
+      "difficulty": 2
+    },
+    {
+      "word": "사상",
+      "hint": "ㅅㅅ",
+      "meaning": "세상이나 삶에 대한 근본적인 생각",
+      "difficulty": 3
+    },
+    {
+      "word": "의무",
+      "hint": "ㅇㅁ",
+      "meaning": "법이나 도덕상으로 꼭 지켜야 할 임무",
+      "difficulty": 1
+    },
+    {
+      "word": "이상",
+      "hint": "ㅇㅅ",
+      "meaning": "현실보다 더 나은 상태에 대한 생각",
+      "difficulty": 2
+    },
+    {
+      "word": "자아",
+      "hint": "ㅈㅇ",
+      "meaning": "자기 자신에 대한 인식이나 의식",
+      "difficulty": 3
+    },
+    {
+      "word": "차이",
+      "hint": "ㅊㅇ",
+      "meaning": "서로 다른 점 또는 구별되는 것",
+      "difficulty": 1
+    },
+    {
+      "word": "판단",
+      "hint": "ㅍㄷ",
+      "meaning": "사물의 옳고 그름을 가림",
+      "difficulty": 2
+    },
+    {
+      "word": "현상",
+      "hint": "ㅎㅅ",
+      "meaning": "눈에 보이는 사물의 모습이나 상태",
+      "difficulty": 2
+    },
+    {
+      "word": "갈등",
+      "hint": "ㄱㄷ",
+      "meaning": "서로 맞서거나 충돌하는 상태",
+      "difficulty": 2
+    },
+    {
+      "word": "논리",
+      "hint": "ㄴㄹ",
+      "meaning": "사고의 올바른 질서나 법칙",
+      "difficulty": 3
+    },
+    {
+      "word": "도덕",
+      "hint": "ㄷㄷ",
+      "meaning": "사회에서 지켜야 할 선악의 기준",
+      "difficulty": 2
+    },
+    {
+      "word": "문화",
+      "hint": "ㅁㅎ",
+      "meaning": "인간의 생활 양식이나 정신적 산물",
+      "difficulty": 1
+    },
+    {
+      "word": "사회",
+      "hint": "ㅅㅎ",
+      "meaning": "공동 생활을 하는 사람들의 모임",
+      "difficulty": 1
+    },
+    {
+      "word": "정의",
+      "hint": "ㅈㅇ",
+      "meaning": "옳고 그름을 판단하는 기준",
+      "difficulty": 3
+    },
+    {
+      "word": "진리",
+      "hint": "ㅈㄹ",
+      "meaning": "변함없이 참된 이치나 사실",
+      "difficulty": 3
+    },
+    {
+      "word": "행복",
+      "hint": "ㅎㅂ",
+      "meaning": "만족하고 기쁜 상태",
+      "difficulty": 1
+    },
+    {
+      "word": "교육",
+      "hint": "ㄱㅇ",
+      "meaning": "지식이나 기술을 가르쳐 줌",
+      "difficulty": 1
+    },
+    {
+      "word": "역사",
+      "hint": "ㅇㅅ",
+      "meaning": "과거에 있었던 사건들의 기록",
+      "difficulty": 1
+    },
+    {
+      "word": "과학",
+      "hint": "ㄱㅎ",
+      "meaning": "체계적인 지식과 연구 방법",
+      "difficulty": 1
+    },
+    {
+      "word": "예술",
+      "hint": "ㅇㅅ",
+      "meaning": "아름다움을 창조하는 활동",
+      "difficulty": 2
+    },
+    {
+      "word": "철학",
+      "hint": "ㅊㅎ",
+      "meaning": "세상의 근본 문제를 탐구하는 학문",
+      "difficulty": 3
+    },
+    {
+      "word": "정치",
+      "hint": "ㅈㅊ",
+      "meaning": "나라를 다스리는 일",
+      "difficulty": 2
+    },
+    {
+      "word": "경제",
+      "hint": "ㄱㅈ",
+      "meaning": "재화의 생산, 분배, 소비 활동",
+      "difficulty": 2
+    }
+  ]
+}
