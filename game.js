@@ -1,7 +1,268 @@
-// game.js - 권지단 어휘대전 고밀도 최적화 버전
+
+// game.js 상단에 추가
+let userNickname = '';
+const NICKNAME_KEY = 'kjd_nickname';
+const DEVICE_ID_KEY = 'kjd_device_id';
+
+// 장치 ID 생성/조회
+function getDeviceId() {
+    let deviceId = localStorage.getItem(DEVICE_ID_KEY);
+    if (!deviceId) {
+        deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem(DEVICE_ID_KEY, deviceId);
+    }
+    return deviceId;
+}
+
+// 닉네임 로드
+function loadNickname() {
+    const savedNickname = localStorage.getItem(NICKNAME_KEY);
+    if (savedNickname) {
+        userNickname = savedNickname;
+        return true;
+    }
+    return false;
+}
+
+// 닉네임 저장
+function saveNickname(nickname) {
+    if (nickname && nickname.trim().length > 0) {
+        userNickname = nickname.trim().substring(0, 10);
+        localStorage.setItem(NICKNAME_KEY, userNickname);
+        return true;
+    }
+    return false;
+}
+
+// 닉네임 입력 화면 표시
+function showNicknameScreen() {
+    const nicknameInput = document.getElementById('nicknameInput');
+    const nicknameCount = document.getElementById('nicknameCount');
+    
+    if (nicknameInput && nicknameCount) {
+        nicknameInput.value = userNickname || '';
+        nicknameCount.textContent = nicknameInput.value.length;
+        
+        nicknameInput.addEventListener('input', function() {
+            let text = this.value.replace(/[^a-zA-Z0-9가-힣ㄱ-ㅎㅏ-ㅣ\s]/g, '');
+            if (text.length > 10) text = text.substring(0, 10);
+            this.value = text;
+            nicknameCount.textContent = text.length;
+        });
+    }
+    
+    showScreen('nickname');
+}
+
+// 시작 화면 표시 함수 수정
+function showStartScreen() {
+    // 기존에 닉네임이 저장되어 있으면 바로 시작 화면 표시
+    if (loadNickname()) {
+        showScreen('start');
+    } else {
+        showNicknameScreen();
+    }
+}
+
+// 랭킹 데이터 가져오기
+async function loadRankings(type = 'score') {
+    try {
+        // Firebase에서 데이터 가져오기
+        if (typeof firebase !== 'undefined') {
+            const rankingRef = firebase.database().ref('rankings');
+            const snapshot = await rankingRef.orderByChild(type).limitToLast(50).once('value');
+            const data = snapshot.val();
+            
+            if (data) {
+                return Object.values(data).sort((a, b) => b[type] - a[type]);
+            }
+        }
+        
+        // 로컬스토리지에서 가져오기 (Fallback)
+        const localRankings = JSON.parse(localStorage.getItem('kjd_local_rankings') || '[]');
+        return localRankings.sort((a, b) => b[type] - a[type]).slice(0, 50);
+        
+    } catch (error) {
+        console.error('❌ 랭킹 로드 실패:', error);
+        const localRankings = JSON.parse(localStorage.getItem('kjd_local_rankings') || '[]');
+        return localRankings.sort((a, b) => b[type] - a[type]).slice(0, 50);
+    }
+}
+
+// 랭킹 화면 표시
+async function showRankingScreen(type = 'score') {
+    // 로딩 상태 표시
+    const rankingList = document.getElementById('rankingList');
+    rankingList.innerHTML = `
+        <div class="loading-rankings">
+            <i class="fas fa-spinner fa-spin"></i> 랭킹 로딩 중...
+        </div>
+    `;
+    
+    showScreen('ranking');
+    
+    // 탭 활성화
+    document.querySelectorAll('.ranking-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.type === type) {
+            tab.classList.add('active');
+        }
+    });
+    
+    // 랭킹 데이터 가져오기
+    const rankings = await loadRankings(type);
+    
+    // 랭킹 목록 렌더링
+    renderRankings(rankings, type);
+    
+    // 내 랭킹 정보 표시
+    renderMyRanking(rankings, type);
+}
+
+// 랭킹 목록 렌더링
+function renderRankings(rankings, type) {
+    const rankingList = document.getElementById('rankingList');
+    
+    if (rankings.length === 0) {
+        rankingList.innerHTML = `
+            <div class="no-rankings">
+                <i class="fas fa-trophy"></i>
+                <p>랭킹 데이터가 없습니다</p>
+                <p class="sub">게임을 플레이하면 랭킹에 등록됩니다!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const rankingItems = rankings.slice(0, 10).map((rank, index) => {
+        const isMe = rank.deviceId === getDeviceId();
+        const rankClass = isMe ? 'ranking-item my-rank' : 'ranking-item';
+        const nameClass = isMe ? 'rank-name me' : 'rank-name';
+        
+        let typeLabel = '';
+        let typeValue = '';
+        
+        switch(type) {
+            case 'score':
+                typeLabel = '점수';
+                typeValue = rank.score.toLocaleString();
+                break;
+            case 'stage':
+                typeLabel = '단계';
+                typeValue = rank.stage;
+                break;
+            case 'combo':
+                typeLabel = '콤보';
+                typeValue = rank.maxCombo;
+                break;
+        }
+        
+        return `
+            <div class="${rankClass}">
+                <div class="rank-position top-${index + 1}">${index + 1}</div>
+                <div class="rank-info">
+                    <div class="${nameClass}">${rank.nickname}</div>
+                    <div class="rank-details">
+                        <div class="rank-stat">
+                            <i class="fas fa-${type === 'score' ? 'star' : type === 'stage' ? 'gamepad' : 'fire'}"></i>
+                            ${typeLabel}: ${typeValue}
+                        </div>
+                        <div class="rank-stat">
+                            <i class="fas fa-check-circle"></i>
+                            정확도: ${rank.accuracy}%
+                        </div>
+                        <div class="rank-stat">
+                            <i class="fas fa-clock"></i>
+                            ${Math.floor(rank.gameTime / 60)}분
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    rankingList.innerHTML = rankingItems;
+}
+
+// 내 랭킹 정보 렌더링
+function renderMyRanking(rankings, type) {
+    const myRanking = document.getElementById('myRanking');
+    const myDeviceId = getDeviceId();
+    const myRank = rankings.findIndex(rank => rank.deviceId === myDeviceId);
+    
+    if (myRank === -1) {
+        myRanking.innerHTML = `
+            <div class="my-ranking-header">내 랭킹</div>
+            <div class="my-ranking-info">
+                <div class="my-rank-details">
+                    <div class="my-rank-name">${userNickname || '익명'}</div>
+                    <div class="my-rank-score">아직 랭킹에 등록되지 않았습니다</div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    const myData = rankings[myRank];
+    let typeValue = '';
+    
+    switch(type) {
+        case 'score':
+            typeValue = myData.score.toLocaleString() + '점';
+            break;
+        case 'stage':
+            typeValue = myData.stage + '단계';
+            break;
+        case 'combo':
+            typeValue = myData.maxCombo + '콤보';
+            break;
+    }
+    
+    myRanking.innerHTML = `
+        <div class="my-ranking-header">내 랭킹 (${myRank + 1}위)</div>
+        <div class="my-ranking-info">
+            <div class="my-rank-position">${myRank + 1}</div>
+            <div class="my-rank-details">
+                <div class="my-rank-name">${myData.nickname}</div>
+                <div class="my-rank-score">${typeValue} • 정확도: ${myData.accuracy}% • ${Math.floor(myData.gameTime / 60)}분</div>
+            </div>
+        </div>
+    `;
+}
+
+// 이벤트 리스너 추가
+function setupRankingEvents() {
+    // 랭킹 탭 클릭
+    document.querySelectorAll('.ranking-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            const type = this.dataset.type;
+            showRankingScreen(type);
+        });
+    });
+    
+    // 랭킹 새로고침
+    const refreshBtn = document.getElementById('refreshRankingBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', async function() {
+            const activeTab = document.querySelector('.ranking-tab.active');
+            const type = activeTab ? activeTab.dataset.type : 'score';
+            await showRankingScreen(type);
+        });
+    }
+    
+    // 랭킹 닫기
+    const closeBtn = document.getElementById('closeRankingBtn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            showScreen('start');
+        });
+    }
+}
+
+// game.js - 모든 게임 기능 유지 + UI 압축 버전 + 타격감 강화 + 새로운 이펙트 + 대사 시스템 개선
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('⚔️ 권지단 어휘대전 로딩...');
+    console.log('⚔️ 권지단 어휘대전 - 고밀도 버전 로딩...');
 
     // =================== 게임 설정 ===================
     const CONFIG = {
@@ -89,96 +350,66 @@ document.addEventListener('DOMContentLoaded', function() {
         { level: 10, emoji: "🔥", name: "파이널 보스", hp: 700, color: "#f97316", attack: 60 }
     ];
 
-    // =================== 몬스터 대사 ===================
+    // =================== 대사 데이터 ===================
     const MONSTER_DIALOGUES = {
-        normal: [
-            "너를 이기고 말겠다!",
-            "이 정도로 날 이길 수 없다!",
-            "한 번 더 덤벼봐!",
-            "내가 질 것 같냐!",
-            "어휘 실력이 대단하군!"
-        ],
-        hit: [
-            "윽! 상처가...",
-            "이런 공격이 통하다니!",
-            "아프다! 하지만 포기하지 않겠어!",
-            "효과가 굉장하군!",
-            "이 정도는 간지럽지 않아!"
-        ],
-        defense: [
-            "방어 성공!",
-            "헛공격이야!",
-            "내 방어막은 완벽해!",
-            "막아냈다!",
-            "너의 공격은 통하지 않아!"
-        ],
-        heal: [
-            "회복했다!",
-            "체력이 돌아왔어!",
-            "다시 힘이 솟는다!",
-            "이제 다시 시작이다!",
-            "상처가 아물었어!"
-        ],
-        lowHp: [
-            "위험하다!",
-            "체력이 얼마 안 남았어...",
-            "마지막까지 버틴다!",
-            "이게 마지막이겠지?",
-            "아직 끝나지 않았다!"
-        ],
-        death: [
-            "으아악! 패배했다...",
-            "너의 승리야...",
-            "다음에 만나자...",
-            "나를 이기다니...",
-            "좋은 승부였어..."
-        ]
+        normal: ["너를 이기고 말겠다!", "이 정도로 날 이길 수 없다!", "한 번 더 덤벼봐!", "내가 질 것 같냐!", "어휘 실력이 대단하군!"],
+        hit: ["윽! 상처가...", "이런 공격이 통하다니!", "아프다!", "효과가 굉장하군!", "이 정도는 간지럽지 않아!"],
+        defense: ["방어 성공!", "헛공격이야!", "내 방어막은 완벽해!", "막아냈다!", "너의 공격은 통하지 않아!"],
+        heal: ["회복했다!", "체력이 돌아왔어!", "다시 힘이 솟는다!", "이제 다시 시작이다!", "상처가 아물었어!"],
+        lowHp: ["위험하다!", "체력이 얼마 안 남았어...", "마지막까지 버틴다!", "이게 마지막이겠지?", "아직 끝나지 않았다!"],
+        death: ["으아악! 패배했다...", "너의 승리야...", "다음에 만나자...", "나를 이기다니...", "좋은 승부였어..."]
+    };
+
+    const PLAYER_DIALOGUES = {
+        normal: ["내가 이길 거야!", "좋은 어휘 실력을 보여주지!", "한 번 덤벼봐!", "이 정도는 쉽지!", "어휘력으로 승부다!"],
+        hit: ["효과적인 공격!", "단어 하나로 강력하다!", "정확한 답변이야!", "어휘력이 빛난다!", "이게 바로 실력이지!"],
+        wrong: ["이런 실수를!", "또 틀렸어...", "집중해야 하는데...", "어휘력을 더 키워야겠어", "다음엔 꼭 맞출 거야!"],
+        heal: ["체력이 회복됐다!", "다시 힘이 난다!", "물약 효과 좋군!", "이제 다시 싸울 수 있어!", "상처가 아물었어!"],
+        lowHp: ["체력이 위험해...", "물약이 필요해...", "마지막까지 버텨야지...", "이대로 지면 안되는데...", "집중력이 필요해..."]
     };
 
     // =================== DOM 요소 ===================
     const el = {
         // 입력
         input: document.getElementById('wordInput'),
-        charCount: document.getElementById('charCount'),
         clearBtn: document.getElementById('clearBtn'),
         submitBtn: document.getElementById('submitBtn'),
         potionBtn: document.getElementById('potionBtn'),
         potionCount: document.getElementById('potionCount'),
         
-        // 대결 화면
+        // 대결
         monsterAvatar: document.getElementById('monsterAvatar'),
         playerAvatar: document.getElementById('playerAvatar'),
-        monsterEffect: document.getElementById('monsterEffect'),
-        playerEffect: document.getElementById('playerEffect'),
-        battleMessage: document.getElementById('battleMessage'),
         monsterSpeech: document.getElementById('monsterSpeech'),
         
-        // HP 바
-        monsterHpFill: document.querySelector('.monster-side .hp-fill'),
-        monsterHpText: document.querySelector('.monster-side .hp-text'),
-        playerHpFill: document.querySelector('.player-side .hp-fill'),
-        playerHpText: document.querySelector('.player-side .hp-text'),
+        // HP (새로운 체력바)
+        monsterHpBar: document.getElementById('monsterHpBar'),
+        monsterHpText: document.getElementById('monsterHpText'),
+        playerHpBar: document.getElementById('playerHpBar'),
+        playerHpText: document.getElementById('playerHpText'),
+        
+        // 정보
+        currentStage: document.getElementById('currentStage'),
+        currentScore: document.getElementById('currentScore'),
+        monsterLevel: document.getElementById('monsterLevel'),
+        monsterNameDisplay: document.getElementById('monsterNameDisplay'),
         
         // 스탯
-        stageValue: document.querySelector('.stage-value'),
-        scoreValue: document.querySelector('.score-value'),
-        comboValue: document.getElementById('comboValue'),
-        recordValue: document.getElementById('recordValue'),
-        accuracyValue: document.getElementById('accuracyValue'),
-        timeLeftValue: document.getElementById('timeLeft'),
+        comboStat: document.getElementById('comboStat'),
+        timeStat: document.getElementById('timeStat'),
+        accuracyStat: document.getElementById('accuracyStat'),
+        recordStat: document.getElementById('recordStat'),
+        timeText: document.getElementById('timeText'),
         
         // 문제
-        initialText: document.getElementById('initialText'),
-        meaningText: document.getElementById('meaningText'),
-        timeFill: document.querySelector('.time-fill'),
-        timeLabel: document.getElementById('timeLabel'),
+        initialDisplay: document.getElementById('initialDisplay'),
+        meaningDisplay: document.getElementById('meaningDisplay'),
         
         // 사운드
         soundCorrect: document.getElementById('soundCorrect'),
         soundWrong: document.getElementById('soundWrong'),
         soundDamage: document.getElementById('soundDamage'),
-        soundMonsterHit: document.getElementById('soundMonsterHit'),
-        soundLevelUp: document.getElementById('soundLevelUp'),
+        soundHit: document.getElementById('soundHit'),
         soundCombo: document.getElementById('soundCombo'),
         soundVictory: document.getElementById('soundVictory'),
         soundPotion: document.getElementById('soundPotion'),
@@ -193,31 +424,110 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 결과
         finalScore: document.getElementById('finalScore'),
-        highestCombo: document.getElementById('highestCombo'),
+        finalCombo: document.getElementById('finalCombo'),
         finalAccuracy: document.getElementById('finalAccuracy'),
-        clearTime: document.getElementById('clearTime'),
-        finalScoreLose: document.getElementById('finalScoreLose'),
-        highestComboLose: document.getElementById('highestComboLose'),
-        clearedStages: document.getElementById('clearedStages'),
-        remainingMonsters: document.getElementById('remainingMonsters'),
-        currentStageStat: document.getElementById('currentStageStat'),
-        currentScoreStat: document.getElementById('currentScoreStat'),
-        currentComboStat: document.getElementById('currentComboStat'),
-        currentPotionStat: document.getElementById('currentPotionStat')
+        finalTime: document.getElementById('finalTime'),
+        loseScore: document.getElementById('loseScore'),
+        loseCombo: document.getElementById('loseCombo'),
+        loseStage: document.getElementById('loseStage'),
+        loseMonsters: document.getElementById('loseMonsters'),
+        pauseStage: document.getElementById('pauseStage'),
+        pauseScore: document.getElementById('pauseScore'),
+        pauseCombo: document.getElementById('pauseCombo'),
+        pausePotion: document.getElementById('pausePotion')
     };
 
-    // =================== 게임 초기화 ===================
-    async function init() {
-        console.log('게임 초기화 시작...');
+    // =================== 새로운 대사 시스템 ===================
+    function showSpeech(text, speaker = 'monster', type = 'normal') {
+        if (!el.monsterSpeech) return;
         
-        await loadWords();
-        setupEvents();
-        adjustLayout();
-        showScreen('start');
+        const speechContent = el.monsterSpeech.querySelector('.speech-content');
+        speechContent.textContent = text;
         
-        console.log('게임 준비 완료');
+        // 말풍선 클래스 초기화 및 설정
+        el.monsterSpeech.className = 'speech-bubble';
+        el.monsterSpeech.classList.add(speaker); // 'monster' 또는 'player'
+        el.monsterSpeech.classList.add(type); // 'hit', 'defense' 등
+        
+        // 애니메이션 재시작
+        el.monsterSpeech.style.animation = 'none';
+        setTimeout(() => {
+            el.monsterSpeech.style.animation = 'speechAppear 3s ease-in-out forwards';
+        }, 10);
+        
+        console.log(`🗨️ ${speaker === 'monster' ? '몬스터' : '플레이어'} 대사 (${type}): ${text}`);
     }
 
+    function showRandomSpeech(speaker = 'monster', type = 'normal') {
+        const dialogues = speaker === 'monster' ? MONSTER_DIALOGUES : PLAYER_DIALOGUES;
+        const dialogueList = dialogues[type] || dialogues.normal;
+        const randomText = dialogueList[Math.floor(Math.random() * dialogueList.length)];
+        showSpeech(randomText, speaker, type);
+    }
+
+    // =================== 게임 초기화 ===================
+    // game.js의 init 함수 업데이트
+async function init() {
+    console.log('게임 초기화 시작...');
+    
+    // 장치 ID 생성
+    getDeviceId();
+    
+    // 닉네임 로드
+    loadNickname();
+    
+    await loadWords();
+    setupEvents();
+    setupRankingEvents(); // 랭킹 이벤트 설정 추가
+    
+    // 시작 화면 표시
+    showStartScreen(); // 수정된 함수 사용
+    
+    console.log('게임 준비 완료');
+}
+
+// setupEvents 함수에 랭킹 버튼 이벤트 추가
+function setupEvents() {
+    // 기존 이벤트들...
+    
+    // 랭킹 버튼 이벤트
+    const rankingBtn = document.getElementById('rankingBtn');
+    if (rankingBtn) {
+        rankingBtn.addEventListener('click', function() {
+            showRankingScreen('score');
+        });
+    }
+    
+    const headerRankingBtn = document.getElementById('headerRankingBtn');
+    if (headerRankingBtn) {
+        headerRankingBtn.addEventListener('click', function() {
+            showRankingScreen('score');
+        });
+    }
+    
+    // 닉네임 저장 버튼
+    const saveNicknameBtn = document.getElementById('saveNicknameBtn');
+    if (saveNicknameBtn) {
+        saveNicknameBtn.addEventListener('click', function() {
+            const nicknameInput = document.getElementById('nicknameInput');
+            if (saveNickname(nicknameInput.value)) {
+                showScreen('start');
+            } else {
+                showMessage('닉네임을 입력해주세요!');
+                createTextShake(nicknameInput);
+            }
+        });
+    }
+    
+    // 닉네임 건너뛰기 버튼
+    const skipNicknameBtn = document.getElementById('skipNicknameBtn');
+    if (skipNicknameBtn) {
+        skipNicknameBtn.addEventListener('click', function() {
+            saveNickname('익명');
+            showScreen('start');
+        });
+    }
+}
     async function loadWords() {
         try {
             const response = await fetch('words.json');
@@ -244,7 +554,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function setupEvents() {
-        // 버튼 이벤트
         el.startBtn.addEventListener('click', startGame);
         el.pauseBtn.addEventListener('click', togglePause);
         el.resumeBtn.addEventListener('click', resumeGame);
@@ -252,31 +561,19 @@ document.addEventListener('DOMContentLoaded', function() {
         el.restartFromLoseBtn.addEventListener('click', restartGame);
         el.playAgainBtn.addEventListener('click', restartGame);
         
-        // 입력 이벤트
-        el.input.addEventListener('input', handleInput);
-        el.input.addEventListener('keydown', handleKeyDown);
         el.clearBtn.addEventListener('click', clearInput);
         el.submitBtn.addEventListener('click', checkAnswer);
         el.potionBtn.addEventListener('click', usePotion);
         
-        // 사운드 초기화
+        el.input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                checkAnswer();
+            }
+        });
+        
         document.addEventListener('click', initAudio, { once: true });
         document.addEventListener('touchstart', initAudio, { once: true });
-        
-        // 화면 조정
-        window.addEventListener('resize', adjustLayout);
-    }
-
-    function adjustLayout() {
-        const vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
-        
-        // 키보드 감지
-        if (window.innerHeight < window.outerHeight) {
-            document.body.classList.add('keyboard-open');
-        } else {
-            document.body.classList.remove('keyboard-open');
-        }
     }
 
     // =================== 게임 시작 ===================
@@ -290,19 +587,16 @@ document.addEventListener('DOMContentLoaded', function() {
         showScreen('game');
         startTimer();
         
-        // 몬스터 대사
-        showMonsterSpeech('normal');
-        
-        // 입력 포커스
         setTimeout(() => {
             el.input.focus();
             el.input.value = '';
-            el.charCount.textContent = '0';
         }, 300);
         
         // 시작 이펙트
+        showRandomSpeech('monster', 'normal');
         vibrate([80, 40, 80]);
         createEffect('⚔️', 50, 50, 'primary');
+        createRippleEffect(50, 50, '#6366f1');
     }
 
     function resetState() {
@@ -347,47 +641,25 @@ document.addEventListener('DOMContentLoaded', function() {
         state.monsterHp = monster.hp;
         state.monsterMaxHp = monster.hp;
         
-        // UI 업데이트
-        const monsterName = document.querySelector('.monster-side .name-text');
-        if (monsterName) {
-            monsterName.textContent = monster.name;
-        }
-        
-        const monsterLevel = document.querySelector('.monster-side .level-badge');
-        if (monsterLevel) {
-            monsterLevel.textContent = `Lv.${level}`;
-        }
-        
         el.monsterAvatar.textContent = monster.emoji;
-        el.stageValue.textContent = level;
+        el.monsterNameDisplay.textContent = monster.name;
+        el.monsterLevel.textContent = `Lv.${level}`;
+        el.currentStage.textContent = level;
         
-        // HP 바
-        updateHpBar(el.monsterHpFill, state.monsterHp, state.monsterMaxHp);
-        el.monsterHpText.textContent = state.monsterHp;
+        updateHpDisplay();
         
         // 등장 이펙트
         animateAvatar('monster', 'appear');
         if (level > 1) {
-            playSound('levelUp');
-            vibrate([80, 40, 80]);
-            createEffect('⭐', 30, 50, 'warning');
+            playSound('victory');
+            shakeScreen(5, 500);
+            createEffect('⭐', 50, 50, 'warning');
+            createEffect('✨', 30, 60, 'warning');
+            createEffect('✨', 70, 40, 'warning');
+            createRippleEffect(50, 50, '#f59e0b');
         }
         
         console.log(`🐉 몬스터 생성: ${monster.name} HP:${monster.hp}`);
-    }
-
-    // =================== 몬스터 대사 ===================
-    function showMonsterSpeech(type) {
-        const dialogues = MONSTER_DIALOGUES[type];
-        if (!dialogues) return;
-        
-        const randomDialogue = dialogues[Math.floor(Math.random() * dialogues.length)];
-        el.monsterSpeech.textContent = randomDialogue;
-        el.monsterSpeech.classList.add('active');
-        
-        setTimeout(() => {
-            el.monsterSpeech.classList.remove('active');
-        }, 2500);
     }
 
     // =================== 문제 시스템 ===================
@@ -397,11 +669,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // 난이도 필터
         const difficulty = Math.min(3, Math.ceil(state.stage / 3));
         const available = state.words.filter(w => w.difficulty <= difficulty);
         
-        // 중복 방지
         let selected;
         let tries = 0;
         do {
@@ -414,16 +684,17 @@ document.addEventListener('DOMContentLoaded', function() {
         state.questionTime = Date.now();
         state.input = "";
         
-        // UI 업데이트
-        el.initialText.textContent = state.currentWord.hint;
-        el.meaningText.textContent = state.currentWord.meaning;
+        el.initialDisplay.textContent = state.currentWord.hint;
+        el.meaningDisplay.textContent = state.currentWord.meaning;
         el.input.value = '';
         el.input.focus();
-        el.charCount.textContent = '0';
         
-        // 시간 초기화
         state.timeLeft = CONFIG.TIME_LIMIT;
-        updateTimeBar();
+        updateTime();
+        
+        // 문제 표시 이펙트
+        createGlowEffect(el.initialDisplay, '#6366f1', 1000);
+        createTextShake(el.initialDisplay);
         
         console.log(`📝 문제: ${state.currentWord.word} (${state.currentWord.hint})`);
     }
@@ -435,39 +706,31 @@ document.addEventListener('DOMContentLoaded', function() {
         state.timer = setInterval(() => {
             if (!state.playing || state.paused || state.gameOver) return;
             
-            // 게임 시간
             state.gameTime = Math.floor((Date.now() - state.startTime) / 1000);
-            
-            // 문제 시간
             state.timeLeft--;
-            updateTimeBar();
+            updateTime();
             
-            // 시간 초과
             if (state.timeLeft <= 0) {
                 timeOut();
             }
         }, 1000);
     }
 
-    function updateTimeBar() {
-        const percent = (state.timeLeft / CONFIG.TIME_LIMIT) * 100;
-        el.timeFill.style.width = `${percent}%`;
-        el.timeLabel.textContent = `${state.timeLeft}초`;
-        el.timeLeftValue.textContent = state.timeLeft;
+    function updateTime() {
+        el.timeStat.textContent = state.timeLeft;
+        el.timeText.textContent = `${state.timeLeft}초`;
         
-        // 색상 업데이트
-        el.timeFill.style.background = 'var(--gradient-success)';
         if (state.timeLeft <= 3) {
-            el.timeFill.style.background = 'var(--gradient-danger)';
-            el.timeLabel.classList.add('critical');
-            el.timeLeftValue.classList.add('critical');
+            el.timeText.style.color = '#ef4444';
+            el.timeStat.style.color = '#ef4444';
+            createPulseEffect(el.timeText);
+            createPulseEffect(el.timeStat);
         } else if (state.timeLeft <= 5) {
-            el.timeFill.style.background = 'var(--gradient-warning)';
-            el.timeLabel.classList.add('warning');
-            el.timeLeftValue.classList.add('warning');
+            el.timeText.style.color = '#f59e0b';
+            el.timeStat.style.color = '#f59e0b';
         } else {
-            el.timeLabel.classList.remove('critical', 'warning');
-            el.timeLeftValue.classList.remove('critical', 'warning');
+            el.timeText.style.color = '';
+            el.timeStat.style.color = '';
         }
     }
 
@@ -480,78 +743,47 @@ document.addEventListener('DOMContentLoaded', function() {
         const damage = calculatePlayerDamage();
         state.player.hp = Math.max(0, state.player.hp - damage);
         
-        // 이펙트
+        // 타격감 효과
+        showAttackBeam('monster', 'player');
+        shakeScreen(8, 500);
+        flashScreen('red', 300);
+        enhancePlayerHit();
+        
+        showDamageNumber(
+            damage,
+            Math.random() * 30 + 35,
+            Math.random() * 30 + 35,
+            '#ef4444'
+        );
+        
         showEffect('player', 'wrong');
         showMessage('시간 초과!');
-        showMonsterSpeech('normal');
+        showRandomSpeech('player', 'wrong');
         playSound('wrong');
         playSound('damage');
         vibrate(150);
         createEffect('⏰', 50, 50, 'danger');
+        createRippleEffect(50, 50, '#ef4444');
         
-        // UI 업데이트
-        updateHpBar(el.playerHpFill, state.player.hp, CONFIG.PLAYER_HP);
-        el.playerHpText.textContent = state.player.hp;
+        updateHpDisplay();
         updateAccuracy();
         
-        // 게임 오버 체크
         if (state.player.hp <= 0) {
             gameEnd(false);
             return;
         }
         
-        // 다음 문제
         setTimeout(() => {
             newQuestion();
         }, 800);
     }
 
-    // =================== 입력 처리 ===================
-    function handleInput(e) {
-        if (!state.playing || state.paused || state.gameOver) return;
-        
-        let text = e.target.value;
-        
-        // 한글만 허용
-        text = text.replace(/[^가-힣ㄱ-ㅎ]/g, '');
-        
-        // 2글자 제한
-        if (text.length > 2) {
-            text = text.slice(0, 2);
-        }
-        
-        // 업데이트
-        state.input = text;
-        el.input.value = text;
-        el.charCount.textContent = text.length;
-    }
-
-    function handleKeyDown(e) {
-        if (!state.playing || state.paused || state.gameOver) return;
-        
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            if (state.input.length === 2) {
-                checkAnswer();
-            }
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            togglePause();
-        }
-    }
-
-    function clearInput() {
-        el.input.value = '';
-        state.input = '';
-        el.charCount.textContent = '0';
-        el.input.focus();
-    }
-
     // =================== 정답 확인 ===================
     function checkAnswer() {
-        if (!state.currentWord || state.input.length !== 2) {
-            if (state.input.length < 2) {
+        if (!state.currentWord || el.input.value.length !== 2) {
+            if (el.input.value.length < 2) {
                 showMessage('2글자를 입력하세요!');
+                createTextShake(el.input);
             }
             return;
         }
@@ -559,16 +791,14 @@ document.addEventListener('DOMContentLoaded', function() {
         state.stats.total++;
         const time = (Date.now() - state.questionTime) / 1000;
         
-        if (state.input === state.currentWord.word) {
+        if (el.input.value === state.currentWord.word) {
             correct(time);
         } else {
             wrong(time);
         }
         
-        // 입력 초기화
         el.input.value = '';
         state.input = '';
-        el.charCount.textContent = '0';
         el.input.focus();
     }
 
@@ -582,9 +812,13 @@ document.addEventListener('DOMContentLoaded', function() {
         state.player.combo++;
         state.player.maxCombo = Math.max(state.player.maxCombo, state.player.combo);
         
-        // 콤보 이펙트
+        // 콤보 이펙트 강화
         if (state.player.combo >= 3) {
             showComboEffect();
+            showComboExplosion();
+            playSound('combo');
+            vibrate([40, 20, 40, 20, 40]);
+            createRippleEffect(50, 50, '#f59e0b');
         }
         
         // 점수 계산
@@ -608,7 +842,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 finalDamage = Math.round(damage * 0.5);
                 defended = true;
                 showEffect('monster', 'defense');
-                showMonsterSpeech('defense');
+                showRandomSpeech('monster', 'defense');
+                createEffect('🛡️', 50, 50, 'primary');
             }
         }
         
@@ -624,35 +859,57 @@ document.addEventListener('DOMContentLoaded', function() {
                 const healAmount = Math.round(state.monsterMaxHp * healPercent);
                 state.monsterHp = Math.min(state.monsterMaxHp, state.monsterHp + healAmount);
                 showEffect('monster', 'heal', healAmount);
-                showMonsterSpeech('heal');
+                showRandomSpeech('monster', 'heal');
+                createEffect('💚', 50, 50, 'success');
             }
         }
         
+        // 타격감 효과들
+        showAttackBeam('player', 'monster');
+        shakeScreen(6, 400);
+        enhanceMonsterHit();
+        
+        const isCritical = state.player.combo >= 5;
+        showDamageNumber(
+            finalDamage, 
+            Math.random() * 30 + 35, 
+            Math.random() * 30 + 35,
+            defended ? '#6366f1' : (isCritical ? '#f59e0b' : '#ef4444'),
+            isCritical
+        );
+        
+        // 플레이어 공격 성공 대사
+        showRandomSpeech('player', 'hit');
+        
         // 낮은 체력 대사
         if (state.monsterHp < state.monsterMaxHp * 0.3) {
-            showMonsterSpeech('lowHp');
-        } else {
-            showMonsterSpeech('hit');
+            showRandomSpeech('monster', 'lowHp');
+            createPulseEffect(document.querySelector('.monster-health .health-bar-container'));
+        } else if (!defended) {
+            // 방어하지 않았을 때만 몬스터 피격 대사
+            showRandomSpeech('monster', 'hit');
         }
         
-        // 이펙트
+        // 기존 이펙트
         showEffect('monster', 'hit');
-        showDamage(finalDamage, defended);
         showMessage('공격 성공!');
         playSound('correct');
-        playSound('monsterHit');
-        vibrate(80);
+        playSound('hit');
+        vibrate(100);
+        
+        // 추가 이펙트
+        if (isCritical) {
+            createEffect('💥', 50, 50, 'warning');
+            createRippleEffect(50, 50, '#f59e0b');
+            createSpinEffect(50, 50, 'warning');
+        }
         
         // UI 업데이트
-        updateHpBar(el.monsterHpFill, state.monsterHp, state.monsterMaxHp);
-        el.monsterHpText.textContent = state.monsterHp;
-        el.scoreValue.textContent = state.player.score.toLocaleString();
-        el.comboValue.textContent = state.player.combo;
-        el.recordValue.textContent = state.player.maxCombo;
+        updateHpDisplay();
+        el.currentScore.textContent = state.player.score.toLocaleString();
+        el.comboStat.textContent = state.player.combo;
+        el.recordStat.textContent = state.player.maxCombo;
         updateAccuracy();
-        
-        // 몬스터 피격
-        animateAvatar('monster', 'hit');
         
         // 몬스터 처치 체크
         if (state.monsterHp <= 0) {
@@ -660,7 +917,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // 다음 문제
         setTimeout(() => {
             newQuestion();
         }, 800);
@@ -674,69 +930,45 @@ document.addEventListener('DOMContentLoaded', function() {
         const damage = calculatePlayerDamage();
         state.player.hp = Math.max(0, state.player.hp - damage);
         
-        // 이펙트
+        // 타격감 효과들
+        showAttackBeam('monster', 'player');
+        shakeScreen(8, 500);
+        flashScreen('red', 300);
+        enhancePlayerHit();
+        
+        showDamageNumber(
+            damage,
+            Math.random() * 30 + 35,
+            Math.random() * 30 + 35,
+            '#ef4444'
+        );
+        
         showEffect('player', 'wrong');
         showMessage('방어 실패!');
-        showMonsterSpeech('normal');
+        showRandomSpeech('player', 'wrong');
+        showRandomSpeech('monster', 'normal');
         playSound('wrong');
         playSound('damage');
-        vibrate(120);
+        vibrate(150);
+        createRippleEffect(50, 50, '#ef4444');
         
-        // UI 업데이트
-        updateHpBar(el.playerHpFill, state.player.hp, CONFIG.PLAYER_HP);
-        el.playerHpText.textContent = state.player.hp;
+        updateHpDisplay();
         updateAccuracy();
         
-        // 게임 오버 체크
         if (state.player.hp <= 0) {
             gameEnd(false);
             return;
         }
         
-        // 다음 문제
         setTimeout(() => {
             newQuestion();
         }, 800);
     }
 
-    // =================== 물약 시스템 ===================
-    function usePotion() {
-        if (!state.playing || state.paused || state.gameOver) return;
-        if (state.player.potions <= 0) return;
-        if (state.player.hp >= state.player.maxHp) {
-            showMessage('체력이 이미 가득 찼습니다!');
-            return;
-        }
-        
-        state.player.potions--;
-        const healAmount = CONFIG.POTION_HEAL;
-        state.player.hp = Math.min(state.player.maxHp, state.player.hp + healAmount);
-        
-        // 이펙트
-        showEffect('player', 'heal', healAmount);
-        showMessage(`체력 +${healAmount} 회복!`);
-        playSound('potion');
-        vibrate([60, 30, 60]);
-        createEffect('🧪', 50, 50, 'potion');
-        
-        // UI 업데이트
-        updateHpBar(el.playerHpFill, state.player.hp, CONFIG.PLAYER_HP);
-        el.playerHpText.textContent = state.player.hp;
-        el.potionCount.textContent = state.player.potions;
-        el.potionBtn.classList.toggle('disabled', state.player.potions <= 0);
-        
-        // 다음 문제
-        setTimeout(() => {
-            newQuestion();
-        }, 800);
-    }
-
-    // =================== 데미지 계산 ===================
     function calculateDamage(time) {
         const base = CONFIG.BASE_DAMAGE;
         const timeBonus = Math.max(0, CONFIG.TIME_LIMIT - time) * CONFIG.TIME_BONUS;
         
-        // 콤보 배율
         let comboMulti = 1.0;
         for (let i = 0; i < CONFIG.COMBO_THRESHOLDS.length; i++) {
             if (state.player.combo >= CONFIG.COMBO_THRESHOLDS[i]) {
@@ -744,13 +976,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // 추가 콤보 배율
         const comboIdx = Math.min(state.player.combo - 1, CONFIG.COMBO_MULTIPLIER.length - 1);
         const extraMulti = CONFIG.COMBO_MULTIPLIER[Math.max(0, comboIdx)];
         
         let damage = (base + timeBonus) * comboMulti * extraMulti;
-        
-        // 스테이지 보정
         const stageMulti = 0.9 + (state.stage * 0.05);
         damage *= stageMulti;
         
@@ -763,7 +992,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let damage = base * stageMulti;
         
-        // 콤보 보너스 데미지
         if (state.player.combo >= 5) {
             damage *= (1 + (state.player.combo * 0.1));
         }
@@ -771,10 +999,42 @@ document.addEventListener('DOMContentLoaded', function() {
         return Math.round(damage);
     }
 
+    // =================== 물약 시스템 ===================
+    function usePotion() {
+        if (!state.playing || state.paused || state.gameOver) return;
+        if (state.player.potions <= 0) return;
+        if (state.player.hp >= state.player.maxHp) {
+            showMessage('체력이 이미 가득 찼습니다!');
+            createTextShake(el.potionBtn);
+            return;
+        }
+        
+        state.player.potions--;
+        const healAmount = CONFIG.POTION_HEAL;
+        state.player.hp = Math.min(state.player.maxHp, state.player.hp + healAmount);
+        
+        showEffect('player', 'heal', healAmount);
+        showMessage(`체력 +${healAmount} 회복!`);
+        showRandomSpeech('player', 'heal');
+        playSound('potion');
+        vibrate([60, 30, 60]);
+        createEffect('🧪', 50, 50, 'potion');
+        createRippleEffect(50, 50, '#8b5cf6');
+        createSpinEffect(50, 50, 'potion');
+        
+        updateHpDisplay();
+        el.potionCount.textContent = state.player.potions;
+        el.potionBtn.classList.toggle('disabled', state.player.potions <= 0);
+        
+        setTimeout(() => {
+            newQuestion();
+        }, 800);
+    }
+
     // =================== 콤보 시스템 ===================
     function resetCombo() {
         state.player.combo = 0;
-        el.comboValue.textContent = '0';
+        el.comboStat.textContent = '0';
         state.stats.combos.push(0);
     }
 
@@ -792,16 +1052,19 @@ document.addEventListener('DOMContentLoaded', function() {
     function defeatMonster() {
         console.log(`🎉 몬스터 처치! (${state.monster.name})`);
         
-        // 사망 애니메이션
         animateAvatar('monster', 'death');
-        showMonsterSpeech('death');
+        showRandomSpeech('monster', 'death');
         
-        // 스테이지 보너스
         const stageBonus = state.stage * CONFIG.SCORE_STAGE;
         state.player.score += stageBonus;
         state.stats.cleared++;
         
-        // 다음 스테이지
+        // 처치 이펙트
+        createEffect('💥', 50, 50, 'danger');
+        createEffect('⭐', 50, 50, 'warning');
+        createRippleEffect(50, 50, '#f59e0b');
+        createSpinEffect(50, 50, 'warning');
+        
         setTimeout(() => {
             state.stage++;
             
@@ -811,17 +1074,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 spawnMonster(state.stage);
                 newQuestion();
                 
-                // 레벨업 이펙트
-                playSound('levelUp');
+                playSound('victory');
                 vibrate([80, 40, 80, 40, 80]);
-                createEffect('⭐', 50, 30, 'warning');
+                createEffect('🎊', 50, 30, 'warning');
                 
-                // 물약 보상 (스테이지 클리어 시 1개)
                 if (state.stage % 2 === 0 && state.player.potions < CONFIG.POTION_COUNT) {
                     state.player.potions++;
                     el.potionCount.textContent = state.player.potions;
                     el.potionBtn.classList.remove('disabled');
                     showMessage('물약 획득!');
+                    createEffect('🧪', 50, 50, 'potion');
                 }
             }
         }, 1200);
@@ -840,30 +1102,28 @@ document.addEventListener('DOMContentLoaded', function() {
             state.timer = null;
         }
         
-        // 결과 계산
         const accuracy = state.stats.total > 0 ? 
             Math.round((state.stats.correct / state.stats.total) * 100) : 0;
         
-        const avgDamage = state.stats.damages.length > 0 ?
-            Math.round(state.stats.damages.reduce((a, b) => a + b, 0) / state.stats.damages.length) : 0;
-        
-        // 결과 화면 업데이트
         if (isWin) {
             el.finalScore.textContent = state.player.score.toLocaleString();
-            el.highestCombo.textContent = state.player.maxCombo;
+            el.finalCombo.textContent = state.player.maxCombo;
             el.finalAccuracy.textContent = `${accuracy}%`;
-            el.clearTime.textContent = `${state.gameTime}초`;
+            el.finalTime.textContent = `${state.gameTime}초`;
             playSound('victory');
             vibrate([150, 80, 150, 80, 200]);
             createEffect('🎉', 50, 50, 'warning');
+            createEffect('🏆', 50, 50, 'warning');
+            createRippleEffect(50, 50, '#f59e0b');
             showScreen('win');
         } else {
-            el.finalScoreLose.textContent = state.player.score.toLocaleString();
-            el.highestComboLose.textContent = state.player.maxCombo;
-            el.clearedStages.textContent = `${state.stats.cleared}/${CONFIG.STAGES}`;
-            el.remainingMonsters.textContent = `${CONFIG.STAGES - state.stats.cleared}마리`;
+            el.loseScore.textContent = state.player.score.toLocaleString();
+            el.loseCombo.textContent = state.player.maxCombo;
+            el.loseStage.textContent = `${state.stats.cleared}/${CONFIG.STAGES}`;
+            el.loseMonsters.textContent = `${CONFIG.STAGES - state.stats.cleared}마리`;
             playSound('wrong');
             vibrate([200, 100, 200]);
+            createEffect('💀', 50, 50, 'danger');
             showScreen('lose');
         }
         
@@ -884,15 +1144,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function pauseGame() {
         state.paused = true;
         
-        // 일시정지 화면 업데이트
-        el.currentStageStat.textContent = `Lv.${state.stage}`;
-        el.currentScoreStat.textContent = `${state.player.score}점`;
-        el.currentComboStat.textContent = `${state.player.combo}콤보`;
-        el.currentPotionStat.textContent = `${state.player.potions}개`;
+        el.pauseStage.textContent = `Lv.${state.stage}`;
+        el.pauseScore.textContent = state.player.score;
+        el.pauseCombo.textContent = state.player.combo;
+        el.pausePotion.textContent = state.player.potions;
         
-        const accuracy = state.stats.total > 0 ? 
-            Math.round((state.stats.correct / state.stats.total) * 100) : 100;
-            
         showScreen('pause');
     }
 
@@ -916,40 +1172,274 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // =================== UI 업데이트 ===================
     function updateUI() {
-        // HP 바
-        updateHpBar(el.playerHpFill, state.player.hp, CONFIG.PLAYER_HP);
-        el.playerHpText.textContent = state.player.hp;
-        
-        // 점수
-        el.scoreValue.textContent = state.player.score.toLocaleString();
-        el.recordValue.textContent = state.player.maxCombo;
+        updateHpDisplay();
+        el.currentScore.textContent = state.player.score.toLocaleString();
+        el.recordStat.textContent = state.player.maxCombo;
         el.potionCount.textContent = state.player.potions;
         el.potionBtn.classList.toggle('disabled', state.player.potions <= 0);
         updateAccuracy();
     }
 
-    function updateHpBar(bar, current, max) {
-        const percent = (current / max) * 100;
-        bar.style.width = `${percent}%`;
+    function updateHpDisplay() {
+        const monsterPercent = (state.monsterHp / state.monsterMaxHp) * 100;
+        const playerPercent = (state.player.hp / CONFIG.PLAYER_HP) * 100;
         
-        // 색상 업데이트
-        if (percent > 50) {
-            bar.style.background = "var(--gradient-success)";
-        } else if (percent > 20) {
-            bar.style.background = "var(--gradient-warning)";
+        // 체력바 업데이트
+        el.monsterHpBar.style.width = `${monsterPercent}%`;
+        el.playerHpBar.style.width = `${playerPercent}%`;
+        
+        // 체력 텍스트 업데이트
+        el.monsterHpText.textContent = `${state.monsterHp}/${state.monsterMaxHp}`;
+        el.playerHpText.textContent = `${state.player.hp}/${CONFIG.PLAYER_HP}`;
+        
+        // 체력바 이펙트
+        if (monsterPercent < 30) {
+            createPulseEffect(el.monsterHpBar);
+        }
+        if (playerPercent < 30) {
+            createPulseEffect(el.playerHpBar);
+        }
+        
+        // 체력이 0에 가까울 때 빨간색 깜빡임 효과
+        if (monsterPercent < 10) {
+            el.monsterHpBar.style.animation = 'flashRed 1s infinite';
         } else {
-            bar.style.background = "var(--gradient-danger)";
-            bar.parentElement.classList.add('critical');
+            el.monsterHpBar.style.animation = '';
+        }
+        
+        if (playerPercent < 10) {
+            el.playerHpBar.style.animation = 'flashGreen 1s infinite';
+        } else {
+            el.playerHpBar.style.animation = '';
         }
     }
 
     function updateAccuracy() {
         const accuracy = state.stats.total > 0 ? 
             Math.round((state.stats.correct / state.stats.total) * 100) : 100;
-        el.accuracyValue.textContent = `${accuracy}%`;
+        el.accuracyStat.textContent = `${accuracy}%`;
     }
 
-    // =================== 애니메이션 & 이펙트 ===================
+    // =================== 새로운 이펙트 함수들 ===================
+    
+    // 화면 흔들기 효과
+    function shakeScreen(intensity = 5, duration = 300) {
+        const container = document.querySelector('.game-container');
+        container.style.animation = `screenShake ${duration}ms ease`;
+        
+        setTimeout(() => {
+            container.style.animation = '';
+        }, duration);
+    }
+    
+    // 화면 플래시 효과
+    function flashScreen(color = 'red', duration = 200) {
+        const flash = document.createElement('div');
+        flash.className = 'screen-flash';
+        flash.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: ${color === 'red' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'};
+            z-index: 9998;
+            pointer-events: none;
+            animation: ${color === 'red' ? 'flashRed' : 'flashGreen'} ${duration}ms ease;
+        `;
+        
+        document.querySelector('.game-container').appendChild(flash);
+        
+        setTimeout(() => {
+            flash.remove();
+        }, duration);
+    }
+    
+    // 공격 빔 효과
+    function showAttackBeam(from, to) {
+        const beam = document.createElement('div');
+        beam.className = 'attack-path';
+        beam.style.cssText = `
+            position: absolute;
+            top: 50%;
+            ${from === 'player' ? 'left: 70%; right: 30%;' : 'left: 30%; right: 70%;'}
+            height: 3px;
+            background: linear-gradient(90deg, 
+                ${from === 'player' ? 'rgba(16, 185, 129, 0)' : 'rgba(239, 68, 68, 0)'} 0%,
+                ${from === 'player' ? 'rgba(16, 185, 129, 0.8)' : 'rgba(239, 68, 68, 0.8)'} 50%,
+                ${from === 'player' ? 'rgba(239, 68, 68, 0)' : 'rgba(16, 185, 129, 0)'} 100%
+            );
+            transform: translateY(-50%);
+            z-index: 1;
+            animation: attackBeam 0.3s ease-out forwards;
+            box-shadow: 0 0 20px ${from === 'player' ? '#10b981' : '#ef4444'};
+        `;
+        
+        document.querySelector('.battle-area').appendChild(beam);
+        
+        setTimeout(() => {
+            beam.remove();
+        }, 300);
+    }
+    
+    // 대형 데미지 숫자 표시
+    function showDamageNumber(amount, x, y, color = '#ef4444', isCritical = false) {
+        const damage = document.createElement('div');
+        damage.className = 'damage-number';
+        damage.textContent = `-${amount}`;
+        damage.style.cssText = `
+            position: absolute;
+            left: ${x}%;
+            top: ${y}%;
+            color: ${color};
+            font-size: ${isCritical ? '50px' : '40px'};
+            font-weight: 900;
+            text-shadow: 0 0 20px ${color}, 0 0 40px ${color};
+            z-index: 1000;
+            pointer-events: none;
+            animation: damageFloat 1.5s ease-out forwards, ${isCritical ? 'criticalHit 0.5s ease' : 'none'};
+        `;
+        
+        document.querySelector('.effects-layer').appendChild(damage);
+        
+        setTimeout(() => {
+            damage.remove();
+        }, 1500);
+    }
+    
+    // 강력한 콤보 이펙트
+    function showComboExplosion() {
+        const combo = document.createElement('div');
+        combo.className = 'combo-display';
+        combo.textContent = `${state.player.combo} COMBO!`;
+        
+        document.querySelector('.effects-layer').appendChild(combo);
+        
+        setTimeout(() => {
+            combo.remove();
+        }, 800);
+    }
+    
+    // 몬스터 피격 효과 강화
+    function enhanceMonsterHit() {
+        const monster = document.querySelector('.monster-circle');
+        
+        // 크기 변화
+        monster.style.transform = 'scale(1.3)';
+        monster.style.transition = 'transform 0.1s ease';
+        
+        // 색상 변화
+        monster.style.filter = 'brightness(2) saturate(2)';
+        
+        setTimeout(() => {
+            monster.style.transform = 'scale(1)';
+            monster.style.filter = '';
+        }, 100);
+        
+        setTimeout(() => {
+            monster.style.transition = '';
+        }, 200);
+    }
+    
+    // 플레이어 피격 효과 강화
+    function enhancePlayerHit() {
+        const player = document.querySelector('.player-circle');
+        
+        player.style.transform = 'scale(0.9)';
+        player.style.transition = 'transform 0.1s ease';
+        player.style.filter = 'brightness(0.8) saturate(0.8)';
+        
+        setTimeout(() => {
+            player.style.transform = 'scale(1)';
+            player.style.filter = '';
+        }, 100);
+        
+        setTimeout(() => {
+            player.style.transition = '';
+        }, 200);
+    }
+
+    // 물결 이펙트
+    function createRippleEffect(x, y, color = '#6366f1') {
+        const ripple = document.createElement('div');
+        ripple.className = 'ripple-effect';
+        ripple.style.cssText = `
+            position: absolute;
+            left: ${x}%;
+            top: ${y}%;
+            width: 20px;
+            height: 20px;
+            border-color: ${color};
+            z-index: 999;
+            pointer-events: none;
+        `;
+        
+        document.querySelector('.effects-layer').appendChild(ripple);
+        
+        setTimeout(() => {
+            ripple.remove();
+        }, 1000);
+    }
+    
+    // 회전 이펙트
+    function createSpinEffect(x, y, type = 'primary') {
+        const spin = document.createElement('div');
+        spin.className = 'spin-effect';
+        spin.style.cssText = `
+            position: absolute;
+            left: ${x}%;
+            top: ${y}%;
+            font-size: 24px;
+            z-index: 999;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+        `;
+        
+        switch(type) {
+            case 'primary': spin.textContent = '🌀'; spin.style.color = '#6366f1'; break;
+            case 'warning': spin.textContent = '🔥'; spin.style.color = '#f59e0b'; break;
+            case 'danger': spin.textContent = '💀'; spin.style.color = '#ef4444'; break;
+            case 'success': spin.textContent = '💚'; spin.style.color = '#10b981'; break;
+            case 'potion': spin.textContent = '🧪'; spin.style.color = '#8b5cf6'; break;
+        }
+        
+        document.querySelector('.effects-layer').appendChild(spin);
+        
+        setTimeout(() => {
+            spin.remove();
+        }, 1000);
+    }
+    
+    // 빛나는 이펙트
+    function createGlowEffect(element, color = '#6366f1', duration = 1000) {
+        element.classList.add('glow-effect');
+        element.style.boxShadow = `0 0 20px ${color}`;
+        
+        setTimeout(() => {
+            element.classList.remove('glow-effect');
+            element.style.boxShadow = '';
+        }, duration);
+    }
+    
+    // 텍스트 흔들기 이펙트
+    function createTextShake(element) {
+        element.classList.add('text-shake');
+        
+        setTimeout(() => {
+            element.classList.remove('text-shake');
+        }, 300);
+    }
+    
+    // 맥박 이펙트
+    function createPulseEffect(element) {
+        element.style.animation = 'pulse 0.5s ease 3';
+        
+        setTimeout(() => {
+            element.style.animation = '';
+        }, 1500);
+    }
+
+    // =================== 기존 애니메이션 & 이펙트 ===================
     function animateAvatar(type, action) {
         const avatar = type === 'monster' ? el.monsterAvatar : el.playerAvatar;
         
@@ -968,77 +1458,71 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showEffect(target, type, amount = 0) {
-        const effect = target === 'monster' ? el.monsterEffect : el.playerEffect;
-        
-        effect.style.animation = 'none';
+        const effect = document.createElement('div');
+        effect.className = 'dynamic-effect';
         
         switch(type) {
             case 'hit':
                 effect.textContent = '💥';
-                effect.style.color = 'var(--danger)';
+                effect.style.color = '#ef4444';
                 break;
             case 'wrong':
                 effect.textContent = '❌';
-                effect.style.color = 'var(--danger)';
+                effect.style.color = '#ef4444';
                 break;
             case 'defense':
                 effect.textContent = '🛡️';
-                effect.style.color = 'var(--primary)';
+                effect.style.color = '#6366f1';
                 break;
             case 'heal':
                 effect.textContent = `+${amount}💚`;
-                effect.style.color = 'var(--success)';
+                effect.style.color = '#10b981';
                 break;
         }
         
-        effect.style.display = 'block';
+        effect.style.position = 'absolute';
         effect.style.left = '50%';
         effect.style.top = '50%';
         effect.style.transform = 'translate(-50%, -50%)';
+        effect.style.fontSize = '24px';
+        effect.style.zIndex = '999';
+        effect.style.pointerEvents = 'none';
+        effect.style.animation = 'hitEffect 0.8s ease-out forwards';
+        
+        document.querySelector('.effects-layer').appendChild(effect);
         
         setTimeout(() => {
-            effect.style.animation = 'hitEffect 0.8s ease-out forwards';
-            setTimeout(() => {
-                effect.style.display = 'none';
-            }, 800);
-        }, 10);
-    }
-
-    function showDamage(amount, defended = false) {
-        const layer = document.querySelector('.damage-layer');
-        if (!layer) return;
-        
-        const popup = document.createElement('div');
-        popup.className = 'damage-popup';
-        popup.textContent = defended ? `-${amount}🛡️` : `-${amount}`;
-        popup.style.color = defended ? 'var(--primary)' : 'var(--danger)';
-        popup.style.left = `${Math.random() * 30 + 35}%`;
-        popup.style.top = `${Math.random() * 30 + 35}%`;
-        popup.style.position = 'absolute';
-        popup.style.fontSize = 'var(--font-2xl)';
-        popup.style.fontWeight = '700';
-        popup.style.textShadow = '0 2px 6px rgba(0,0,0,0.4)';
-        popup.style.animation = 'damagePop 1s ease-out forwards';
-        popup.style.pointerEvents = 'none';
-        popup.style.zIndex = '10';
-        
-        layer.appendChild(popup);
-        
-        setTimeout(() => {
-            popup.remove();
-        }, 1000);
+            effect.remove();
+        }, 800);
     }
 
     function showMessage(text) {
-        el.battleMessage.textContent = text;
-        el.battleMessage.style.animation = 'none';
+        const message = document.createElement('div');
+        message.className = 'battle-message';
+        message.textContent = text;
+        message.style.position = 'fixed';
+        message.style.top = '50%';
+        message.style.left = '50%';
+        message.style.transform = 'translate(-50%, -50%)';
+        message.style.background = 'rgba(0,0,0,0.8)';
+        message.style.color = '#f59e0b';
+        message.style.padding = '8px 12px';
+        message.style.borderRadius = '6px';
+        message.style.fontWeight = 'bold';
+        message.style.zIndex = '9999';
+        message.style.fontSize = '14px';
+        message.style.textAlign = 'center';
+        message.style.animation = 'fadeIn 0.2s ease';
+        
+        document.body.appendChild(message);
         
         setTimeout(() => {
-            el.battleMessage.style.animation = 'textPop 1.2s ease-out forwards';
+            message.style.opacity = '0';
+            message.style.transition = 'opacity 0.3s ease';
             setTimeout(() => {
-                el.battleMessage.style.opacity = '0';
-            }, 1200);
-        }, 10);
+                message.remove();
+            }, 300);
+        }, 1500);
     }
 
     function createEffect(emoji, x, y, type = 'primary') {
@@ -1058,26 +1542,11 @@ document.addEventListener('DOMContentLoaded', function() {
         effect.style.animation = 'scaleIn 0.5s ease-out forwards';
         
         switch(type) {
-            case 'primary':
-                effect.style.color = 'var(--primary)';
-                effect.style.textShadow = '0 0 15px rgba(99,102,241,0.5)';
-                break;
-            case 'danger':
-                effect.style.color = 'var(--danger)';
-                effect.style.textShadow = '0 0 15px rgba(239,68,68,0.5)';
-                break;
-            case 'warning':
-                effect.style.color = 'var(--warning)';
-                effect.style.textShadow = '0 0 15px rgba(245,158,11,0.5)';
-                break;
-            case 'success':
-                effect.style.color = 'var(--success)';
-                effect.style.textShadow = '0 0 15px rgba(16,185,129,0.5)';
-                break;
-            case 'potion':
-                effect.style.color = 'var(--potion)';
-                effect.style.textShadow = '0 0 15px rgba(139,92,246,0.5)';
-                break;
+            case 'primary': effect.style.color = '#6366f1'; break;
+            case 'danger': effect.style.color = '#ef4444'; break;
+            case 'warning': effect.style.color = '#f59e0b'; break;
+            case 'success': effect.style.color = '#10b981'; break;
+            case 'potion': effect.style.color = '#8b5cf6'; break;
         }
         
         layer.appendChild(effect);
@@ -1094,8 +1563,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 el.soundCorrect,
                 el.soundWrong,
                 el.soundDamage,
-                el.soundMonsterHit,
-                el.soundLevelUp,
+                el.soundHit,
                 el.soundCombo,
                 el.soundVictory,
                 el.soundPotion
@@ -1118,8 +1586,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 'correct': el.soundCorrect,
                 'wrong': el.soundWrong,
                 'damage': el.soundDamage,
-                'monsterHit': el.soundMonsterHit,
-                'levelUp': el.soundLevelUp,
+                'hit': el.soundHit,
                 'combo': el.soundCombo,
                 'victory': el.soundVictory,
                 'potion': el.soundPotion
@@ -1130,9 +1597,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 sound.currentTime = 0;
                 sound.play().catch(() => {});
             }
-        } catch (err) {
-            // 사운드 에러 무시
-        }
+        } catch (err) {}
     }
 
     function vibrate(pattern) {
@@ -1145,30 +1610,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // =================== 화면 관리 ===================
     function showScreen(screen) {
-        // 모든 오버레이 숨기기
         document.querySelectorAll('.overlay').forEach(overlay => {
             overlay.classList.remove('active');
         });
         
-        // 게임 화면 요소들
-        const gameElements = [
-            document.querySelector('.battle-stage'),
-            document.querySelector('.quick-stats'),
-            document.querySelector('.problem-card'),
-            document.querySelector('.input-interface')
-        ];
-        
         if (screen === 'game') {
-            // 게임 화면 표시
-            gameElements.forEach(el => {
-                if (el) el.style.display = '';
-            });
+            document.querySelector('.battle-area').style.display = 'grid';
+            document.querySelector('.health-area').style.display = 'flex';
+            document.querySelector('.problem-card').style.display = 'flex';
+            document.querySelector('.input-area').style.display = 'block';
+            document.querySelector('.separator-line').style.display = 'block';
             el.pauseBtn.style.display = 'block';
         } else {
-            // 오버레이 표시
-            gameElements.forEach(el => {
-                if (el) el.style.display = 'none';
-            });
+            document.querySelector('.battle-area').style.display = 'none';
+            document.querySelector('.health-area').style.display = 'none';
+            document.querySelector('.problem-card').style.display = 'none';
+            document.querySelector('.input-area').style.display = 'none';
+            document.querySelector('.separator-line').style.display = 'none';
             el.pauseBtn.style.display = 'none';
             
             const target = document.querySelector(`.${screen}-screen`);
@@ -1178,12 +1636,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // =================== 유틸리티 함수 ===================
+    function clearInput() {
+        el.input.value = '';
+        el.input.focus();
+    }
+
     // =================== 게임 초기화 실행 ===================
     init();
 
     // =================== 전역 변수 ===================
     window.gameState = state;
-    window.GAME_CONFIG = CONFIG;
     window.checkAnswer = checkAnswer;
     window.usePotion = usePotion;
     window.startGame = startGame;
@@ -1194,41 +1657,98 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🎮 게임 로딩 완료!');
 });
 
-// =================== CSS 애니메이션 추가 ===================
-document.addEventListener('DOMContentLoaded', function() {
-    const style = document.createElement('style');
-    style.textContent = `
-        .dynamic-effect {
-            position: absolute;
-            z-index: 999;
-            pointer-events: none;
-            transform: translate(-50%, -50%);
+// game.js의 gameEnd 함수 수정
+async function gameEnd(isWin) {
+    console.log(isWin ? '🏆 승리!' : '💀 패배!');
+    
+    state.playing = false;
+    state.gameOver = true;
+    state.victory = isWin;
+    
+    if (state.timer) {
+        clearInterval(state.timer);
+        state.timer = null;
+    }
+    
+    const accuracy = state.stats.total > 0 ? 
+        Math.round((state.stats.correct / state.stats.total) * 100) : 0;
+    
+    // 랭킹 데이터 구성
+    const rankingData = {
+        nickname: userNickname || '익명',
+        deviceId: getDeviceId(),
+        score: state.player.score,
+        stage: state.stage,
+        cleared: state.stats.cleared,
+        maxCombo: state.player.maxCombo,
+        accuracy: accuracy,
+        gameTime: state.gameTime,
+        timestamp: Date.now(),
+        isWin: isWin
+    };
+    
+    // 랭킹 저장
+    await saveRanking(rankingData);
+    
+    if (isWin) {
+        // 기존 승리 화면 코드...
+    } else {
+        // 기존 패배 화면 코드...
+    }
+}
+
+// game.js의 saveRanking 함수 수정
+async function saveRanking(data) {
+    try {
+        // index.html에 정의된 전역 함수 사용
+        if (typeof window.saveRankingToFirebase === 'function') {
+            const saved = await window.saveRankingToFirebase(data);
+            if (saved) {
+                console.log('📊 Firebase 랭킹 저장 완료');
+            }
         }
         
-        .damage-popup {
-            position: absolute;
-            z-index: 10;
-            pointer-events: none;
-        }
+        // 로컬스토리지에 백업 저장
+        saveRankingToLocal(data);
         
-        /* 추가 애니메이션 */
-        @keyframes scaleIn {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-            70% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-        }
+    } catch (error) {
+        console.error('❌ 랭킹 저장 실패:', error);
+        saveRankingToLocal(data);
+    }
+}
+
+// 로컬스토리지에 랭킹 저장 (백업)
+function saveRankingToLocal(data) {
+    const localRankings = JSON.parse(localStorage.getItem('kjd_local_rankings') || '[]');
+    localRankings.push(data);
+    
+    // 최근 50개만 저장
+    if (localRankings.length > 50) {
+        localRankings.splice(0, localRankings.length - 50);
+    }
+    
+    localStorage.setItem('kjd_local_rankings', JSON.stringify(localRankings));
+}
+function initAudio() {
+    try {
+        const sounds = [
+            el.soundCorrect,
+            el.soundWrong,
+            el.soundDamage,
+            el.soundHit,
+            el.soundCombo,
+            el.soundVictory,
+            el.soundPotion
+        ];
         
-        @keyframes textPop {
-            0% { transform: translate(-50%, 0) scale(0.8); opacity: 0; }
-            50% { transform: translate(-50%, -10px) scale(1.1); opacity: 1; }
-            100% { transform: translate(-50%, -20px) scale(1); opacity: 0; }
-        }
-        
-        @keyframes hitEffect {
-            0% { transform: translate(-50%, -50%) scale(0.5) rotate(0deg); opacity: 0; }
-            50% { transform: translate(-50%, -50%) scale(1.2) rotate(180deg); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(0.8) rotate(360deg); opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
-});
+        sounds.forEach(sound => {
+            if (sound) {
+                sound.volume = 0.6;
+                sound.load();
+            }
+        });
+        console.log('🔊 오디오 초기화 완료');
+    } catch (err) {
+        console.log('🔇 오디오 초기화 실패');
+    }
+}
