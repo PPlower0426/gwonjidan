@@ -23,16 +23,44 @@
     <!-- 게임 컨테이너 -->
     <div class="game-container">
         
-        <!-- 최소화 헤더 -->
+        <!-- 고밀도 헤더 (스테이지 + 점수 + 체력 통합) -->
         <div class="game-header">
-            <div class="header-main">
+            <div class="header-left">
                 <span class="game-logo">⚔️ 권지단</span>
-                <div class="header-info">
-                    <span class="stage-info">스테이지 <strong id="currentStage">1</strong>/10</span>
-                    <span class="score-info">⭐ <strong id="currentScore">0</strong></span>
+                <div class="stage-display">
+                    <span class="stage-label">STAGE</span>
+                    <span class="stage-value" id="currentStage">1</span>
+                    <span class="stage-slash">/</span>
+                    <span class="stage-total">10</span>
                 </div>
             </div>
+            
+            <div class="header-center">
+                <!-- 컴팩트 체력바 -->
+                <div class="compact-health">
+                    <div class="compact-hp monster-hp">
+                        <div class="hp-icon">👹</div>
+                        <div class="hp-bar-container">
+                            <div class="hp-bar-fill monster-bar" id="compactMonsterHp"></div>
+                        </div>
+                        <div class="hp-text" id="compactMonsterHpText">100</div>
+                    </div>
+                    <div class="vs-mini">⚔️</div>
+                    <div class="compact-hp player-hp">
+                        <div class="hp-text" id="compactPlayerHpText">100</div>
+                        <div class="hp-bar-container">
+                            <div class="hp-bar-fill player-bar" id="compactPlayerHp"></div>
+                        </div>
+                        <div class="hp-icon">👤</div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="header-right">
+                <div class="score-display">
+                    <span class="score-icon">⭐</span>
+                    <span class="score-value" id="currentScore">0</span>
+                </div>
                 <button class="icon-btn ranking-header-btn" id="headerRankingBtn" title="랭킹">
                     <i class="fas fa-trophy"></i>
                 </button>
@@ -40,149 +68,239 @@
             </div>
         </div>
         
-        <!-- 대결 영역 (초고밀도) -->
+        <!-- 초고밀도 대결 영역 -->
         <div class="battle-area">
             <!-- 몬스터 측 -->
-            <div class="monster-container">
-                <div class="combatant-body">
+            <div class="combatant monster-side">
+                <div class="combatant-info">
+                    <div class="combatant-level" id="monsterLevel">Lv.1</div>
+                    <div class="combatant-name" id="monsterNameDisplay">초급 몬스터</div>
+                </div>
+                <div class="combatant-avatar">
                     <div class="avatar-circle monster-circle">
                         <div class="monster-avatar" id="monsterAvatar">👹</div>
-                        <!-- 말풍선 표시기 (몬스터 말할 때 보임) -->
-                        <div class="speech-indicator" id="monsterSpeechIndicator">
-                            <div class="indicator-dot"></div>
-                            <div class="indicator-dot"></div>
-                            <div class="indicator-dot"></div>
+                    </div>
+                    <!-- 인라인 체력바 (아바타 바로 아래) -->
+                    <div class="inline-health monster-health">
+                        <div class="inline-hp-text" id="inlineMonsterHpText">100/100</div>
+                        <div class="inline-hp-bar-container">
+                            <div class="inline-hp-bar-fill monster-bar" id="inlineMonsterHp"></div>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- 대결 중앙선 -->
+            <!-- 중앙 대결 정보 -->
             <div class="battle-center">
-                <div class="battle-line"></div>
-                <div class="quick-stats">
-                    <div class="mini-stat"><span class="stat-icon">🔥</span><span class="stat-val" id="comboStat">0</span></div>
-                    <div class="mini-stat"><span class="stat-icon">⏱️</span><span class="stat-val" id="timeStat">10</span></div>
-                    <div class="mini-stat"><span class="stat-icon">🎯</span><span class="stat-val" id="accuracyStat">100%</span></div>
-                    <div class="mini-stat"><span class="stat-icon">⚡</span><span class="stat-val" id="recordStat">0</span></div>
+                <div class="center-stats">
+                    <div class="stat-item">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-value" id="comboStat">0</div>
+                        <div class="stat-label">콤보</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-value" id="timeStat">10</div>
+                        <div class="stat-label">시간</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-value" id="accuracyStat">100%</div>
+                        <div class="stat-label">정확도</div>
+                    </div>
+                </div>
+                <div class="center-vs">
+                    <div class="vs-glow">⚔️</div>
                 </div>
             </div>
             
             <!-- 플레이어 측 -->
-            <div class="player-container">
-                <div class="combatant-body">
+            <div class="combatant player-side">
+                <div class="combatant-info">
+                    <div class="combatant-name">YOU</div>
+                    <div class="combatant-level">👤</div>
+                </div>
+                <div class="combatant-avatar">
                     <div class="avatar-circle player-circle">
                         <div class="player-avatar" id="playerAvatar">👤</div>
+                    </div>
+                    <!-- 인라인 체력바 (아바타 바로 아래) -->
+                    <div class="inline-health player-health">
+                        <div class="inline-hp-text" id="inlinePlayerHpText">100/100</div>
+                        <div class="inline-hp-bar-container">
+                            <div class="inline-hp-bar-fill player-bar" id="inlinePlayerHp"></div>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <!-- 중앙 대사 영역 -->
+            <!-- 중앙 대사 (말풍선) -->
             <div class="center-speech">
                 <div class="speech-bubble" id="monsterSpeech">
                     <div class="speech-content">너를 이기고 말겠다!</div>
-                    <div class="speech-arrow"></div>
-                </div>
-            </div>
-            
-            <!-- 이름 바 -->
-            <div class="name-bar">
-                <span class="name monster-name" id="monsterNameDisplay">초급 몬스터</span>
-                <span class="vs">⚔️</span>
-                <span class="name player-name">YOU</span>
-            </div>
-        </div>
-        
-        <!-- 체력 바 영역 (분리됨) -->
-        <div class="health-area">
-            <!-- 몬스터 체력 -->
-            <div class="health-container monster-health">
-                <div class="health-header">
-                    <span class="health-level" id="monsterLevel">Lv.1</span>
-                    <span class="health-text" id="monsterHpText">100/100</span>
-                </div>
-                <div class="health-bar-container">
-                    <div class="health-bar-background"></div>
-                    <div class="health-bar-fill monster-bar" id="monsterHpBar" style="width: 100%"></div>
-                </div>
-            </div>
-            
-            <!-- 플레이어 체력 -->
-            <div class="health-container player-health">
-                <div class="health-header">
-                    <span class="health-text" id="playerHpText">100/100</span>
-                    <span class="health-level">👤</span>
-                </div>
-                <div class="health-bar-container">
-                    <div class="health-bar-background"></div>
-                    <div class="health-bar-fill player-bar" id="playerHpBar" style="width: 100%"></div>
                 </div>
             </div>
         </div>
         
-        <!-- 얇은 분리선 -->
-        <div class="separator-line"></div>
-        
-        <!-- 문제 카드 (초고밀도) -->
+        <!-- 고밀도 문제 카드 -->
         <div class="problem-card">
-            <div class="card-top">
-                <div class="time-display">
-                    <span class="time-icon">⏱️</span>
-                    <span class="time-text" id="timeText">10초</span>
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-keyboard"></i>
+                    <span>어휘 문제</span>
+                    <span class="length-badge" id="wordLengthBadge">2글자</span>
                 </div>
-                <div class="card-title">어휘 문제</div>
+                <div class="card-time">
+                    <div class="time-display">
+                        <i class="fas fa-clock"></i>
+                        <span class="time-text" id="timeText">10초</span>
+                    </div>
+                </div>
             </div>
             
-            <div class="card-content">
-                <!-- 초성 표시 -->
+            <div class="card-body">
+                <!-- 초성 힌트 -->
                 <div class="hint-section">
+                    <div class="hint-label">초성 힌트</div>
                     <div class="initial-display" id="initialDisplay">ㄱㅇ</div>
+                    <div class="length-indicator" id="lengthIndicator">
+                        <span class="dot active"></span>
+                        <span class="dot active"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
                 </div>
                 
-                <!-- 뜻 표시 -->
+                <!-- 뜻 설명 -->
                 <div class="meaning-section">
+                    <div class="meaning-label">뜻 설명</div>
                     <div class="meaning-display" id="meaningDisplay">병원체가 몸속에 들어와 번식하는 것</div>
                 </div>
             </div>
+            
+            <div class="card-footer">
+                <div class="input-guide">
+                    <i class="fas fa-info-circle"></i>
+                    <span>2~5글자 입력 가능 • 천지인(·) 포함 가능</span>
+                </div>
+            </div>
         </div>
         
-        <!-- 입력 인터페이스 (초고밀도) -->
+        <!-- 입력 인터페이스 -->
         <div class="input-area">
-            <!-- 입력 액션 -->
-            <div class="input-actions">
-                <button class="icon-btn potion-btn" id="potionBtn">
-                    <i class="fas fa-flask"></i>
-                    <span class="potion-count" id="potionCount">3</span>
-                </button>
-                
+            <div class="input-container">
                 <div class="input-field">
                     <input type="text" 
                            id="wordInput" 
                            class="word-input"
-                           maxlength="2"
-                           placeholder="두글자 입력"
+                           maxlength="5"
+                           placeholder="2~5글자 입력"
                            autocapitalize="none"
                            autocorrect="off"
-                           spellcheck="false">
+                           spellcheck="false"
+                           autocomplete="off">
                 </div>
                 
-                <div class="action-buttons">
-                    <button class="icon-btn clear-btn" id="clearBtn">
-                        <i class="fas fa-times"></i>
+                <div class="input-actions">
+                    <button class="icon-btn clear-btn" id="clearBtn" title="지우기">
+                        <i class="fas fa-eraser"></i>
                     </button>
-                    <button class="icon-btn submit-btn" id="submitBtn">
+                    
+                    <button class="icon-btn potion-btn" id="potionBtn" title="물약 사용">
+                        <i class="fas fa-flask"></i>
+                        <span class="potion-count" id="potionCount">3</span>
+                    </button>
+                    
+                    <button class="icon-btn submit-btn" id="submitBtn" title="정답 제출">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
             </div>
-            
-            <!-- 입력 안내 -->
-            <div class="input-guide">
-                <i class="fas fa-info-circle"></i> 한국어 키보드 사용 • 2글자 입력 후 제출
+        </div>
+        
+        <!-- 모든 오버레이 화면 (변경 없음) -->
+        <!-- 시작 화면 -->
+        <div class="overlay start-screen">
+            <div class="overlay-content">
+                <div class="welcome-screen">
+                    <div class="title-section">
+                        <div class="title-icon">⚔️</div>
+                        <h1>권지단</h1>
+                        <h2>어휘대전</h2>
+                    </div>
+                    
+                    <div class="welcome-message">
+                        <p>초성과 뜻을 보고 단어를 맞춰<br>몬스터를 물리치는 고밀도 어휘 대결!</p>
+                    </div>
+                    
+                    <div class="game-features">
+                        <div class="feature"><span>🎯</span> 2~5글자 고급어휘</div>
+                        <div class="feature"><span>⚔️</span> 10단계 대결</div>
+                        <div class="feature"><span>🔥</span> 콤보 시스템</div>
+                        <div class="feature"><span>🧪</span> 물약 회복</div>
+                        <div class="feature"><span>🏆</span> 실시간 랭킹</div>
+                        <div class="feature"><span>👤</span> 닉네임 설정</div>
+                    </div>
+                    
+                    <button class="start-button" id="startBtn">
+                        <i class="fas fa-play"></i> 대결 시작
+                    </button>
+                    
+                    <button class="btn secondary ranking-button" id="rankingBtn" style="margin-bottom: 12px;">
+                        <i class="fas fa-trophy"></i> 랭킹 보기
+                    </button>
+                    
+                    <div class="game-guide">
+                        <h3><i class="fas fa-graduation-cap"></i> 게임 방법</h3>
+                        <ol>
+                            <li>초성과 뜻을 보고 2~5글자 단어 입력</li>
+                            <li>정답 → 몬스터 공격 / 오답 → 플레이어 피해</li>
+                            <li>콤보 유지 시 강력한 공격</li>
+                            <li>물약으로 체력 회복 가능</li>
+                            <li>10단계 몬스터 물리치면 승리!</li>
+                            <li>닉네임 설정 후 랭킹에 기록 등록</li>
+                        </ol>
+                    </div>
+                </div>
             </div>
         </div>
         
-        <!-- 오버레이 화면들 -->
+        <!-- 닉네임 설정 화면 -->
+        <div class="overlay nickname-screen">
+            <div class="overlay-content">
+                <div class="nickname-header">
+                    <div class="nickname-icon">👤</div>
+                    <h2>닉네임 설정</h2>
+                    <p class="nickname-sub">랭킹에 표시될 이름을 입력하세요</p>
+                </div>
+                
+                <div class="nickname-input-section">
+                    <input type="text" 
+                           id="nicknameInput" 
+                           class="nickname-input"
+                           maxlength="10"
+                           placeholder="최대 10자"
+                           autocapitalize="none"
+                           autocorrect="off">
+                    <div class="nickname-counter">
+                        <span id="nicknameCount">0</span>/10
+                    </div>
+                </div>
+                
+                <div class="nickname-notice">
+                    <i class="fas fa-info-circle"></i> 동일 기기에서는 한 번만 입력합니다
+                </div>
+                
+                <button class="btn primary" id="saveNicknameBtn">
+                    <i class="fas fa-save"></i> 저장하고 계속하기
+                </button>
+                
+                <button class="btn secondary" id="skipNicknameBtn">
+                    <i class="fas fa-forward"></i> 건너뛰기
+                </button>
+            </div>
+        </div>
         
         <!-- 일시정지 화면 -->
         <div class="overlay pause-screen">
@@ -234,42 +352,6 @@
             </div>
         </div>
         
-        <!-- 닉네임 설정 화면 -->
-        <div class="overlay nickname-screen">
-            <div class="overlay-content">
-                <div class="nickname-header">
-                    <div class="nickname-icon">👤</div>
-                    <h2>닉네임 설정</h2>
-                    <p class="nickname-sub">랭킹에 표시될 이름을 입력하세요</p>
-                </div>
-                
-                <div class="nickname-input-section">
-                    <input type="text" 
-                           id="nicknameInput" 
-                           class="nickname-input"
-                           maxlength="10"
-                           placeholder="최대 10자"
-                           autocapitalize="none"
-                           autocorrect="off">
-                    <div class="nickname-counter">
-                        <span id="nicknameCount">0</span>/10
-                    </div>
-                </div>
-                
-                <div class="nickname-notice">
-                    <i class="fas fa-info-circle"></i> 동일 기기에서는 한 번만 입력합니다
-                </div>
-                
-                <button class="btn primary" id="saveNicknameBtn">
-                    <i class="fas fa-save"></i> 저장하고 계속하기
-                </button>
-                
-                <button class="btn secondary" id="skipNicknameBtn">
-                    <i class="fas fa-forward"></i> 건너뛰기
-                </button>
-            </div>
-        </div>
-        
         <!-- 랭킹 화면 -->
         <div class="overlay ranking-screen">
             <div class="overlay-content">
@@ -308,52 +390,6 @@
                     <button class="btn primary" id="closeRankingBtn">
                         <i class="fas fa-times"></i> 닫기
                     </button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 시작 화면 -->
-        <div class="overlay start-screen">
-            <div class="overlay-content">
-                <div class="welcome-screen">
-                    <div class="title-section">
-                        <div class="title-icon">⚔️</div>
-                        <h1>권지단</h1>
-                        <h2>어휘대전</h2>
-                    </div>
-                    
-                    <div class="welcome-message">
-                        <p>초성과 뜻을 보고 단어를 맞춰<br>몬스터를 물리치는 고밀도 어휘 대결!</p>
-                    </div>
-                    
-                    <div class="game-features">
-                        <div class="feature"><span>🎯</span> 2글자 고급어휘</div>
-                        <div class="feature"><span>⚔️</span> 10단계 대결</div>
-                        <div class="feature"><span>🔥</span> 콤보 시스템</div>
-                        <div class="feature"><span>🧪</span> 물약 회복</div>
-                        <div class="feature"><span>🏆</span> 실시간 랭킹</div>
-                        <div class="feature"><span>👤</span> 닉네임 설정</div>
-                    </div>
-                    
-                    <button class="start-button" id="startBtn">
-                        <i class="fas fa-play"></i> 대결 시작
-                    </button>
-                    
-                    <button class="btn secondary ranking-button" id="rankingBtn" style="margin-bottom: 12px;">
-                        <i class="fas fa-trophy"></i> 랭킹 보기
-                    </button>
-                    
-                    <div class="game-guide">
-                        <h3><i class="fas fa-graduation-cap"></i> 게임 방법</h3>
-                        <ol>
-                            <li>초성과 뜻을 보고 2글자 단어 입력</li>
-                            <li>정답 → 몬스터 공격 / 오답 → 플레이어 피해</li>
-                            <li>콤보 유지 시 강력한 공격</li>
-                            <li>물약으로 체력 회복 가능</li>
-                            <li>10단계 몬스터 물리치면 승리!</li>
-                            <li>닉네임 설정 후 랭킹에 기록 등록</li>
-                        </ol>
-                    </div>
                 </div>
             </div>
         </div>
@@ -474,26 +510,27 @@
     
     <!-- 사운드 요소들 -->
     <audio id="soundCorrect" preload="auto">
-    <source src="sounds/correct.mp3" type="audio/mpeg">
-</audio>
-<audio id="soundWrong" preload="auto">
-    <source src="sounds/wrong.mp3" type="audio/mpeg">
-</audio>
-<audio id="soundDamage" preload="auto">
-    <source src="sounds/damage.mp3" type="audio/mpeg">
-</audio>
-<audio id="soundHit" preload="auto">
-    <source src="sounds/hit.mp3" type="audio/mpeg">
-</audio>
-<audio id="soundCombo" preload="auto">
-    <source src="sounds/combo.mp3" type="audio/mpeg">
-</audio>
-<audio id="soundVictory" preload="auto">
-    <source src="sounds/victory.mp3" type="audio/mpeg">
-</audio>
-<audio id="soundPotion" preload="auto">
-    <source src="sounds/potion.mp3" type="audio/mpeg">
-</audio>
+        <source src="sounds/correct.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="soundWrong" preload="auto">
+        <source src="sounds/wrong.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="soundDamage" preload="auto">
+        <source src="sounds/damage.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="soundHit" preload="auto">
+        <source src="sounds/hit.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="soundCombo" preload="auto">
+        <source src="sounds/combo.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="soundVictory" preload="auto">
+        <source src="sounds/victory.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="soundPotion" preload="auto">
+        <source src="sounds/potion.mp3" type="audio/mpeg">
+    </audio>
+    
     <!-- 게임 로직 -->
     <script src="game.js"></script>
     
@@ -630,43 +667,11 @@
     console.log("✅ Firebase 설정 완료. 상태:", firebaseInitialized ? "활성화" : "비활성화");
     </script>
     
-    <!-- 모바일 최적화 -->
+    <!-- 모바일 최적화 및 이벤트 핸들러 -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const wordInput = document.getElementById('wordInput');
-        const clearBtn = document.getElementById('clearBtn');
-        const submitBtn = document.getElementById('submitBtn');
-        const potionBtn = document.getElementById('potionBtn');
-        
-        // 입력 처리
-        if (wordInput) {
-            wordInput.addEventListener('input', function() {
-                let text = this.value.replace(/[^가-힣ㄱ-ㅎ]/g, '');
-                if (text.length > 2) text = text.slice(0, 2);
-                this.value = text;
-            });
-            
-            wordInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (window.checkAnswer) window.checkAnswer();
-                }
-            });
-        }
-        
-        // 버튼 이벤트
-        if (clearBtn) clearBtn.addEventListener('click', function() {
-            wordInput.value = '';
-            wordInput.focus();
-        });
-        
-        if (submitBtn) submitBtn.addEventListener('click', function() {
-            if (window.checkAnswer) window.checkAnswer();
-        });
-        
-        if (potionBtn) potionBtn.addEventListener('click', function() {
-            if (window.usePotion) window.usePotion();
-        });
+        // 게임 시작 및 오버레이 이벤트는 game.js에서 처리
+        // 여기서는 UI 관련 이벤트만 처리
         
         // 닉네임 입력 처리
         const nicknameInput = document.getElementById('nicknameInput');
@@ -688,268 +693,7 @@
             });
         }
         
-        // 닉네임 저장 버튼
-        const saveNicknameBtn = document.getElementById('saveNicknameBtn');
-        if (saveNicknameBtn) {
-            saveNicknameBtn.addEventListener('click', function() {
-                const nickname = nicknameInput.value.trim();
-                if (nickname.length > 0) {
-                    localStorage.setItem('kjd_nickname', nickname);
-                    
-                    // 장치 ID 생성 (없는 경우에만)
-                    if (!localStorage.getItem('kjd_device_id')) {
-                        const deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                        localStorage.setItem('kjd_device_id', deviceId);
-                    }
-                    
-                    document.querySelector('.nickname-screen').classList.remove('active');
-                    document.querySelector('.start-screen').classList.add('active');
-                    
-                    // Firebase 이벤트
-                    if (window.logGameEvent) {
-                        window.logGameEvent('nickname_set', {
-                            nickname_length: nickname.length
-                        });
-                    }
-                } else {
-                    alert('닉네임을 입력해주세요!');
-                    nicknameInput.focus();
-                }
-            });
-        }
-        
-        // 닉네임 건너뛰기 버튼
-        const skipNicknameBtn = document.getElementById('skipNicknameBtn');
-        if (skipNicknameBtn) {
-            skipNicknameBtn.addEventListener('click', function() {
-                localStorage.setItem('kjd_nickname', '익명');
-                
-                // 장치 ID 생성 (없는 경우에만)
-                if (!localStorage.getItem('kjd_device_id')) {
-                    const deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                    localStorage.setItem('kjd_device_id', deviceId);
-                }
-                
-                document.querySelector('.nickname-screen').classList.remove('active');
-                document.querySelector('.start-screen').classList.add('active');
-                
-                // Firebase 이벤트
-                if (window.logGameEvent) {
-                    window.logGameEvent('nickname_skipped');
-                }
-            });
-        }
-        
-        // 시작 시 입력 포커스
-        document.getElementById('startBtn').addEventListener('click', function() {
-            setTimeout(() => {
-                if (wordInput) {
-                    wordInput.focus();
-                    wordInput.value = '';
-                }
-            }, 300);
-            
-            // Firebase 이벤트
-            if (window.logGameEvent) {
-                window.logGameEvent('game_start');
-            }
-        });
-        
-        // 일시정지 해제 시 입력 포커스
-        document.getElementById('resumeBtn').addEventListener('click', function() {
-            setTimeout(() => {
-                if (wordInput) wordInput.focus();
-            }, 300);
-        });
-        
-        // 랭킹 버튼 이벤트
-        const rankingBtn = document.getElementById('rankingBtn');
-        const headerRankingBtn = document.getElementById('headerRankingBtn');
-        const viewRankingFromWinBtn = document.getElementById('viewRankingFromWinBtn');
-        const viewRankingFromLoseBtn = document.getElementById('viewRankingFromLoseBtn');
-        const closeRankingBtn = document.getElementById('closeRankingBtn');
-        const refreshRankingBtn = document.getElementById('refreshRankingBtn');
-        
-        // 랭킹 데이터 로드 함수
-        async function loadAndDisplayRankings() {
-            const rankingList = document.getElementById('rankingList');
-            const myRanking = document.getElementById('myRanking');
-            
-            if (!rankingList) return;
-            
-            rankingList.innerHTML = `
-                <div class="loading-rankings">
-                    <i class="fas fa-spinner fa-spin"></i> 랭킹 로딩 중...
-                </div>
-            `;
-            
-            try {
-                // 활성 탭 확인
-                const activeTab = document.querySelector('.ranking-tab.active');
-                const type = activeTab ? activeTab.dataset.type : 'score';
-                
-                // Firebase에서 랭킹 로드
-                const rankings = await window.loadRankingsFromFirebase(type, 10);
-                
-                if (rankings.length === 0) {
-                    rankingList.innerHTML = `
-                        <div class="no-rankings">
-                            <i class="fas fa-trophy"></i>
-                            <p>랭킹 데이터가 없습니다</p>
-                            <p class="sub">게임을 플레이하면 랭킹에 등록됩니다!</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                // 현재 사용자 정보
-                const currentDeviceId = localStorage.getItem('kjd_device_id');
-                const currentNickname = localStorage.getItem('kjd_nickname') || '익명';
-                
-                // 내 랭킹 찾기
-                let myRankIndex = -1;
-                let myRankData = null;
-                
-                for (let i = 0; i < rankings.length; i++) {
-                    if (rankings[i].deviceId === currentDeviceId) {
-                        myRankIndex = i;
-                        myRankData = rankings[i];
-                        break;
-                    }
-                }
-                
-                // 랭킹 목록 렌더링
-                let rankingHTML = '';
-                for (let i = 0; i < Math.min(rankings.length, 10); i++) {
-                    const rank = rankings[i];
-                    const isMe = rank.deviceId === currentDeviceId;
-                    
-                    let rankValue = '';
-                    switch(type) {
-                        case 'score': rankValue = rank.score.toLocaleString() + '점'; break;
-                        case 'stage': rankValue = rank.stage + '단계'; break;
-                        case 'combo': rankValue = rank.maxCombo + '콤보'; break;
-                    }
-                    
-                    rankingHTML += `
-                        <div class="ranking-item ${isMe ? 'my-rank' : ''}">
-                            <div class="rank-position ${i < 3 ? 'top-' + (i+1) : ''}">${i + 1}</div>
-                            <div class="rank-info">
-                                <div class="rank-name ${isMe ? 'me' : ''}">${rank.nickname}</div>
-                                <div class="rank-details">
-                                    <div class="rank-stat">
-                                        <i class="fas fa-${type === 'score' ? 'star' : type === 'stage' ? 'gamepad' : 'fire'}"></i>
-                                        ${rankValue}
-                                    </div>
-                                    <div class="rank-stat">
-                                        <i class="fas fa-check-circle"></i>
-                                        정확도: ${rank.accuracy || 0}%
-                                    </div>
-                                    <div class="rank-stat">
-                                        <i class="fas fa-clock"></i>
-                                        ${Math.floor(rank.gameTime / 60)}분
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                rankingList.innerHTML = rankingHTML;
-                
-                // 내 랭킹 정보 표시
-                if (myRankData) {
-                    let myRankValue = '';
-                    switch(type) {
-                        case 'score': myRankValue = myRankData.score.toLocaleString() + '점'; break;
-                        case 'stage': myRankValue = myRankData.stage + '단계'; break;
-                        case 'combo': myRankValue = myRankData.maxCombo + '콤보'; break;
-                    }
-                    
-                    myRanking.innerHTML = `
-                        <div class="my-ranking-header">내 랭킹 (${myRankIndex + 1}위)</div>
-                        <div class="my-ranking-info">
-                            <div class="my-rank-position">${myRankIndex + 1}</div>
-                            <div class="my-rank-details">
-                                <div class="my-rank-name">${myRankData.nickname}</div>
-                                <div class="my-rank-score">${myRankValue} • 정확도: ${myRankData.accuracy || 0}% • ${Math.floor(myRankData.gameTime / 60)}분</div>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    myRanking.innerHTML = `
-                        <div class="my-ranking-header">내 랭킹</div>
-                        <div class="my-ranking-info">
-                            <div class="my-rank-details">
-                                <div class="my-rank-name">${currentNickname}</div>
-                                <div class="my-rank-score">아직 랭킹에 등록되지 않았습니다</div>
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                // Firebase 이벤트
-                if (window.logGameEvent) {
-                    window.logGameEvent('ranking_viewed', {
-                        ranking_type: type,
-                        ranking_count: rankings.length
-                    });
-                }
-                
-            } catch (error) {
-                console.error('랭킹 로드 실패:', error);
-                rankingList.innerHTML = `
-                    <div class="no-rankings">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>랭킹을 불러오는데 실패했습니다</p>
-                        <p class="sub">인터넷 연결을 확인해주세요</p>
-                    </div>
-                `;
-            }
-        }
-        
-        function showRankingScreen() {
-            document.querySelectorAll('.overlay').forEach(overlay => {
-                overlay.classList.remove('active');
-            });
-            document.querySelector('.ranking-screen').classList.add('active');
-            
-            // 랭킹 데이터 로드
-            loadAndDisplayRankings();
-        }
-        
-        function closeRankingScreen() {
-            document.querySelector('.ranking-screen').classList.remove('active');
-            document.querySelector('.start-screen').classList.add('active');
-        }
-        
-        if (rankingBtn) rankingBtn.addEventListener('click', showRankingScreen);
-        if (headerRankingBtn) headerRankingBtn.addEventListener('click', showRankingScreen);
-        if (viewRankingFromWinBtn) viewRankingFromWinBtn.addEventListener('click', showRankingScreen);
-        if (viewRankingFromLoseBtn) viewRankingFromLoseBtn.addEventListener('click', showRankingScreen);
-        if (closeRankingBtn) closeRankingBtn.addEventListener('click', closeRankingScreen);
-        
-        // 랭킹 새로고침
-        if (refreshRankingBtn) {
-            refreshRankingBtn.addEventListener('click', loadAndDisplayRankings);
-        }
-        
-        // 랭킹 탭 전환
-        document.querySelectorAll('.ranking-tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                // 모든 탭 비활성화
-                document.querySelectorAll('.ranking-tab').forEach(t => {
-                    t.classList.remove('active');
-                });
-                // 현재 탭 활성화
-                this.classList.add('active');
-                
-                // 랭킹 데이터 다시 로드
-                loadAndDisplayRankings();
-            });
-        });
-        
-        // 키보드 감지
+        // 키보드 감지 및 UI 조정
         window.addEventListener('resize', function() {
             if (window.innerHeight < window.outerHeight * 0.7) {
                 document.body.classList.add('keyboard-open');
