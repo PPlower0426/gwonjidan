@@ -17,13 +17,58 @@
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; background: #0a0a0f; color: #fff; position: fixed; }
         .game-container { width: 100%; height: 100vh; height: -webkit-fill-available; max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; background: #0a0a0f; overflow: hidden; }
+        
+        /* 애니메이션 정의 */
+        @keyframes monsterSpawn {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            70% { transform: scale(1.2) rotate(20deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0); opacity: 1; }
+        }
+        
+        @keyframes monsterIdle {
+            0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+            25% { transform: translateY(-5px) scale(1.05) rotate(-2deg); }
+            50% { transform: translateY(0) scale(1) rotate(0deg); }
+            75% { transform: translateY(5px) scale(0.95) rotate(2deg); }
+        }
+        
+        @keyframes monsterDeath {
+            0% { transform: scale(1) rotate(0deg); opacity: 1; }
+            30% { transform: scale(1.3) rotate(30deg); opacity: 0.8; }
+            100% { transform: scale(0) rotate(90deg); opacity: 0; }
+        }
+        
+        @keyframes playerIdle {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes playerHit {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.2) translateX(10px); }
+            50% { transform: scale(0.9) translateX(-20px); }
+            75% { transform: scale(1.1) translateX(5px); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes playerHeal {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.3); }
+            50% { transform: scale(1.1); }
+            75% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes hitEffect {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(0.9); filter: brightness(1.5); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
     </style>
 </head>
 <body>
-    <!-- 게임 컨테이너 -->
     <div class="game-container">
         
-        <!-- 간소화된 헤더 -->
         <div class="game-header">
             <div class="header-left">
                 <span class="game-logo">⚔️ 권지단</span>
@@ -42,9 +87,7 @@
             </div>
         </div>
         
-        <!-- 대결 영역 (심플하게) -->
         <div class="battle-area">
-            <!-- 몬스터 측 -->
             <div class="combatant monster-side">
                 <div class="combatant-avatar">
                     <div class="avatar-circle monster-circle">
@@ -55,7 +98,6 @@
                         <div class="combatant-level" id="monsterLevel">Lv.1</div>
                     </div>
                 </div>
-                <!-- 몬스터 체력 -->
                 <div class="combatant-health monster-health">
                     <div class="health-bar-container">
                         <div class="health-bar-fill monster-bar" id="monsterHpBar"></div>
@@ -64,12 +106,10 @@
                 </div>
             </div>
             
-            <!-- 중앙 시간 -->
             <div class="battle-center">
                 <div class="time-display" id="timeDisplay">10</div>
             </div>
             
-            <!-- 플레이어 측 -->
             <div class="combatant player-side">
                 <div class="combatant-avatar">
                     <div class="combatant-info">
@@ -80,7 +120,6 @@
                         <div class="player-avatar" id="playerAvatar">👤</div>
                     </div>
                 </div>
-                <!-- 플레이어 체력 -->
                 <div class="combatant-health player-health">
                     <div class="health-text" id="playerHpText">100/100</div>
                     <div class="health-bar-container">
@@ -89,7 +128,6 @@
                 </div>
             </div>
             
-            <!-- 중앙 대사 -->
             <div class="center-speech">
                 <div class="speech-bubble" id="monsterSpeech">
                     <div class="speech-content">너를 이기고 말겠다!</div>
@@ -97,27 +135,22 @@
             </div>
         </div>
         
-        <!-- 문제 영역 -->
         <div class="problem-area">
-            <!-- 초성 힌트 줄 -->
             <div class="hint-line">
                 <div class="hint-container">
-                    <div class="hint-label">초성</div>
                     <div class="initial-display" id="initialDisplay">ㄱㅇ</div>
                 </div>
                 <button class="icon-btn potion-btn" id="potionBtn">
                     <i class="fas fa-flask"></i>
-                    <span class="potion-count" id="potionCount">3</span>
+                    <span class="potion-count" id="potionCount">2</span>
                 </button>
             </div>
             
-            <!-- 뜻 설명 -->
             <div class="meaning-section">
                 <div class="meaning-display" id="meaningDisplay">병원체가 몸속에 들어와 번식하는 것</div>
             </div>
         </div>
         
-        <!-- 입력 영역 (키보드만) -->
         <div class="input-area">
             <input type="text" 
                    id="wordInput" 
@@ -134,9 +167,6 @@
             </div>
         </div>
         
-        <!-- 오버레이 화면들 -->
-        
-        <!-- 시작 화면 -->
         <div class="overlay start-screen active">
             <div class="overlay-content">
                 <div class="welcome-screen">
@@ -175,7 +205,6 @@
             </div>
         </div>
         
-        <!-- 설정 화면 -->
         <div class="overlay settings-screen">
             <div class="overlay-content">
                 <div class="settings-header">
@@ -195,7 +224,7 @@
                         <div class="stat-icon">🧪</div>
                         <div class="stat-info">
                             <div class="stat-label">물약</div>
-                            <div class="stat-value" id="settingsPotion">3</div>
+                            <div class="stat-value" id="settingsPotion">2</div>
                         </div>
                     </div>
                 </div>
@@ -217,7 +246,6 @@
             </div>
         </div>
         
-        <!-- 랭킹 화면 -->
         <div class="overlay ranking-screen">
             <div class="overlay-content">
                 <div class="ranking-header">
@@ -245,7 +273,6 @@
             </div>
         </div>
         
-        <!-- 승리 화면 -->
         <div class="overlay result-screen win-screen">
             <div class="overlay-content">
                 <div class="result-header">
@@ -296,7 +323,6 @@
             </div>
         </div>
         
-        <!-- 패배 화면 -->
         <div class="overlay result-screen lose-screen">
             <div class="overlay-content">
                 <div class="result-header">
@@ -340,13 +366,11 @@
             </div>
         </div>
         
-        <!-- 이펙트 레이어 -->
         <div class="effects-layer"></div>
         <div class="damage-layer"></div>
         
     </div>
     
-    <!-- 사운드 요소들 -->
     <audio id="soundCorrect" preload="auto">
         <source src="sounds/correct.mp3" type="audio/mpeg">
     </audio>
@@ -369,12 +393,9 @@
         <source src="sounds/potion.mp3" type="audio/mpeg">
     </audio>
     
-    <!-- 게임 로직 -->
     <script src="game.js"></script>
     
-    <!-- Firebase 설정 및 초기화 -->
     <script>
-    // Firebase 구성 정보
     const firebaseConfig = {
         apiKey: "AIzaSyApBB-QuQBOImgysqbfeffYBowEeERYRS4",
         authDomain: "gwonjidanwords.firebaseapp.com",
@@ -386,7 +407,6 @@
         measurementId: "G-GRW0CC74MP"
     };
 
-    // Firebase 초기화
     let firebaseInitialized = false;
     
     try {
@@ -397,12 +417,10 @@
         console.error("❌ Firebase 초기화 실패:", error);
     }
 
-    // Firebase 상태 확인 함수
     window.isFirebaseReady = function() {
         return firebaseInitialized && typeof firebase.database === 'function';
     };
     
-    // 랭킹 저장 함수
     window.saveRankingToFirebase = async function(rankingData) {
         if (!window.isFirebaseReady()) return false;
         
@@ -420,7 +438,6 @@
         }
     };
     
-    // 랭킹 조회 함수
     window.loadRankingsFromFirebase = async function(type = 'score', limit = 50) {
         if (!window.isFirebaseReady()) return [];
         

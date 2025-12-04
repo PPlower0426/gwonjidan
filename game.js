@@ -7,9 +7,9 @@ const CONFIG = {
     PLAYER_HP: 100,
     MONSTER_BASE_HP: 300,
     
-    BASE_DAMAGE: 30,
+    BASE_DAMAGE: 24, // 20% 감소 (30 → 24)
     TIME_BONUS: 5,
-    COMBO_MULTIPLIER: [1.0, 1.4, 1.8, 2.2, 2.6, 3.0, 3.4, 3.8, 4.2, 4.6],
+    COMBO_MULTIPLIER: [1.0, 1.3, 1.6, 1.9, 2.2, 2.5, 2.8, 3.1, 3.4, 3.7], // 콤보 배율 감소
     
     DEFENSE_CHANCE: [0, 0.1, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55],
     HEAL_CHANCE: [0, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5],
@@ -21,7 +21,7 @@ const CONFIG = {
     SCORE_STAGE: 3000,
     
     COMBO_THRESHOLDS: [3, 5, 8, 12],
-    COMBO_MULTIPLIERS: [1.8, 2.2, 2.6, 3.0],
+    COMBO_MULTIPLIERS: [1.6, 1.9, 2.2, 2.5], // 콤보 배율 감소
     
     POTION_HEAL: 40,
     POTION_COUNT: 2,
@@ -35,16 +35,16 @@ const CONFIG = {
 };
 
 const MONSTERS = [
-    { level: 1, emoji: "👹", name: "초급", hp: 300, color: "#6366f1", attack: 15 },
-    { level: 2, emoji: "👻", name: "중급", hp: 400, color: "#8b5cf6", attack: 22 },
-    { level: 3, emoji: "🤖", name: "고급", hp: 560, color: "#06b6d4", attack: 30 },
-    { level: 4, emoji: "🧌", name: "전문", hp: 760, color: "#ef4444", attack: 38 },
-    { level: 5, emoji: "🐉", name: "달인", hp: 1000, color: "#f59e0b", attack: 46 },
-    { level: 6, emoji: "🦄", name: "대가", hp: 1300, color: "#ec4899", attack: 54 },
-    { level: 7, emoji: "🧟", name: "거장", hp: 1640, color: "#10b981", attack: 62 },
-    { level: 8, emoji: "👽", name: "종결", hp: 2000, color: "#84cc16", attack: 70 },
-    { level: 9, emoji: "🔥", name: "신", hp: 2400, color: "#f97316", attack: 78 },
-    { level: 10, emoji: "🫅🏻", name: "왕", hp: 15000, color: "#f59e0b", attack: 120 }
+    { level: 1, emoji: "👹", name: "초급", hp: 300, color: "#6366f1", attack: 18 },
+    { level: 2, emoji: "👻", name: "중급", hp: 400, color: "#8b5cf6", attack: 26 },
+    { level: 3, emoji: "🤖", name: "고급", hp: 560, color: "#06b6d4", attack: 36 },
+    { level: 4, emoji: "🧌", name: "전문", hp: 760, color: "#ef4444", attack: 46 },
+    { level: 5, emoji: "🐉", name: "달인", hp: 1000, color: "#f59e0b", attack: 55 },
+    { level: 6, emoji: "🦄", name: "대가", hp: 1300, color: "#ec4899", attack: 65 },
+    { level: 7, emoji: "🧟", name: "거장", hp: 1640, color: "#10b981", attack: 74 },
+    { level: 8, emoji: "👽", name: "종결", hp: 2000, color: "#84cc16", attack: 84 },
+    { level: 9, emoji: "🔥", name: "신", hp: 2400, color: "#f97316", attack: 94 },
+    { level: 10, emoji: "🫅🏻", name: "왕", hp: 15000, color: "#f59e0b", attack: 144 }
 ];
 
 const MONSTER_DIALOGUES = {
@@ -178,7 +178,6 @@ function createEffect(emoji, x, y, type = 'primary', size = 'normal') {
     effect.style.zIndex = '20';
     effect.style.filter = 'drop-shadow(0 0 20px currentColor)';
     
-    // 효과 타입에 따른 애니메이션
     if (type === 'explosion') {
         effect.style.animation = 'explode 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
     } else if (type === 'float') {
@@ -204,8 +203,8 @@ function createComboEffect(combo) {
     if (combo >= 3) {
         createEffect('🔥', centerX, centerY, 'explosion', 'large');
         playSound('combo');
+        shakeScreen(5, 300); // 콤보 진동
         
-        // 콤보 수 표시
         const comboText = document.createElement('div');
         comboText.className = 'combo-display';
         comboText.textContent = `${combo} COMBO!`;
@@ -231,7 +230,6 @@ function createComboEffect(combo) {
     }
     
     if (combo >= 5) {
-        // 추가 효과
         for (let i = 0; i < 8; i++) {
             const angle = (i * 45) * Math.PI / 180;
             const x = centerX + Math.cos(angle) * 30;
@@ -316,7 +314,6 @@ function createShootingStar(startX, startY, endX, endY) {
         }
     `;
     
-    // 스타일 시트에 키프레임 추가
     const style = document.createElement('style');
     style.textContent = keyframes;
     document.head.appendChild(style);
@@ -394,33 +391,27 @@ function playSound(type) {
 // =================== DOM 초기화 ===================
 function initElements() {
     el = {
-        // 입력
         input: document.getElementById('wordInput'),
         potionBtn: document.getElementById('potionBtn'),
         potionCount: document.getElementById('potionCount'),
         
-        // 대결
         monsterAvatar: document.getElementById('monsterAvatar'),
         playerAvatar: document.getElementById('playerAvatar'),
         monsterSpeech: document.getElementById('monsterSpeech'),
         monsterNameDisplay: document.getElementById('monsterNameDisplay'),
         monsterLevel: document.getElementById('monsterLevel'),
         
-        // 체력
         monsterHpBar: document.getElementById('monsterHpBar'),
         monsterHpText: document.getElementById('monsterHpText'),
         playerHpBar: document.getElementById('playerHpBar'),
         playerHpText: document.getElementById('playerHpText'),
         
-        // 정보
         currentStage: document.getElementById('currentStage'),
         timeDisplay: document.getElementById('timeDisplay'),
         
-        // 문제
         initialDisplay: document.getElementById('initialDisplay'),
         meaningDisplay: document.getElementById('meaningDisplay'),
         
-        // 사운드
         soundCorrect: document.getElementById('soundCorrect'),
         soundWrong: document.getElementById('soundWrong'),
         soundDamage: document.getElementById('soundDamage'),
@@ -429,7 +420,6 @@ function initElements() {
         soundVictory: document.getElementById('soundVictory'),
         soundPotion: document.getElementById('soundPotion'),
         
-        // 버튼
         startBtn: document.getElementById('startBtn'),
         pauseBtn: document.getElementById('pauseBtn'),
         resumeBtn: document.getElementById('resumeBtn'),
@@ -442,11 +432,9 @@ function initElements() {
         loseRankingBtn: document.getElementById('loseRankingBtn'),
         closeRankingBtn: document.getElementById('closeRankingBtn'),
         
-        // 설정
         settingsStage: document.getElementById('settingsStage'),
         settingsPotion: document.getElementById('settingsPotion'),
         
-        // 결과
         finalScore: document.getElementById('finalScore'),
         finalCombo: document.getElementById('finalCombo'),
         finalAccuracy: document.getElementById('finalAccuracy'),
@@ -504,7 +492,6 @@ function getDefaultWords() {
 
 // =================== 이벤트 설정 ===================
 function setupEvents() {
-    // 게임 컨트롤
     if (el.startBtn) el.startBtn.addEventListener('click', startGame);
     if (el.pauseBtn) el.pauseBtn.addEventListener('click', showSettings);
     if (el.resumeBtn) el.resumeBtn.addEventListener('click', resumeGame);
@@ -513,18 +500,12 @@ function setupEvents() {
     if (el.playAgainBtn) el.playAgainBtn.addEventListener('click', restartGame);
     if (el.quitBtn) el.quitBtn.addEventListener('click', () => showScreen('start'));
     
-    // 입력 컨트롤
     if (el.potionBtn) el.potionBtn.addEventListener('click', usePotion);
     
-    // 천지인 포함 입력 처리 - 확장된 한글 입력 허용
     if (el.input) {
         el.input.addEventListener('input', function(e) {
-            // 천지인 입력 허용: 모든 한글, 자음, 모음, 아래아(ㆍ), 가운데점(·)
             let text = this.value;
-            
-            // 허용할 문자: 모든 한글, 자음/모음, 아래아(U+318D), 가운데점(U+00B7, U+2027)
             text = text.replace(/[^\u3131-\u318E\uAC00-\uD7A3\u1100-\u11FF\uA960-\uA97C\uD7B0-\uD7FF\u318D\u00B7\u2027]/g, '');
-            
             if (text.length > 5) text = text.substring(0, 5);
             this.value = text;
         });
@@ -534,21 +515,14 @@ function setupEvents() {
                 e.preventDefault();
                 checkAnswer();
             }
-            
-            // 천지인 특수 문자 입력 지원
-            if (e.key === '.' || e.key === '·' || e.key === 'ㆍ') {
-                // 기본 동작 허용
-            }
         });
     }
     
-    // 랭킹 버튼
     if (el.settingsRankingBtn) el.settingsRankingBtn.addEventListener('click', () => showRankingScreen('score'));
     if (el.winRankingBtn) el.winRankingBtn.addEventListener('click', () => showRankingScreen('score'));
     if (el.loseRankingBtn) el.loseRankingBtn.addEventListener('click', () => showRankingScreen('score'));
     if (el.closeRankingBtn) el.closeRankingBtn.addEventListener('click', () => showSettings());
     
-    // 랭킹 탭
     document.querySelectorAll('.ranking-tab').forEach(tab => {
         tab.addEventListener('click', function() {
             document.querySelectorAll('.ranking-tab').forEach(t => t.classList.remove('active'));
@@ -575,12 +549,10 @@ async function init() {
 function startGame() {
     console.log('⚔️ 대결 시작!');
     
-    // 시작 효과
     createEffect('⚔️', 50, 50, 'explosion', 'large');
-    shakeScreen(5, 500);
+    shakeScreen(6, 600);
     
-    // 별똥별 효과
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 8; i++) {
         setTimeout(() => {
             const startX = Math.random() * 100;
             const startY = -10;
@@ -588,7 +560,7 @@ function startGame() {
             const endY = 110;
             
             createShootingStar(startX, startY, endX, endY);
-        }, i * 200);
+        }, i * 150);
     }
     
     resetState();
@@ -649,14 +621,30 @@ function spawnMonster(level) {
     state.monsterHp = monster.hp;
     state.monsterMaxHp = monster.hp;
     
-    if (el.monsterAvatar) el.monsterAvatar.textContent = monster.emoji;
+    if (el.monsterAvatar) {
+        el.monsterAvatar.textContent = monster.emoji;
+        el.monsterAvatar.style.animation = 'monsterSpawn 0.8s ease-out forwards';
+        
+        setTimeout(() => {
+            el.monsterAvatar.style.animation = 'monsterIdle 3s ease-in-out infinite';
+        }, 800);
+    }
+    
     if (el.monsterNameDisplay) el.monsterNameDisplay.textContent = monster.name;
     if (el.monsterLevel) el.monsterLevel.textContent = `Lv.${level}`;
     if (el.currentStage) el.currentStage.textContent = level;
     
     updateHpDisplay();
     
-    console.log(`🐉 몬스터 생성: ${monster.name} HP:${monster.hp}`);
+    for (let i = 0; i < 12; i++) {
+        setTimeout(() => {
+            const x = 50 + (Math.random() * 40 - 20);
+            const y = 50 + (Math.random() * 40 - 20);
+            createEffect('✨', x, y, 'float', 'small');
+        }, i * 70);
+    }
+    
+    console.log(`🐉 몬스터 생성: ${monster.name} HP:${monster.hp} ATK:${monster.attack}`);
 }
 
 function newQuestion() {
@@ -705,12 +693,10 @@ function updateTime() {
     if (el.timeDisplay) {
         el.timeDisplay.textContent = state.timeLeft;
         
-        // 시간에 따른 효과
         if (state.timeLeft <= 3) {
             el.timeDisplay.classList.add('critical');
             el.timeDisplay.style.color = '#ef4444';
             
-            // 긴박한 효과
             if (state.timeLeft <= 2) {
                 shakeScreen(2, 100);
             }
@@ -734,6 +720,18 @@ function timeOut() {
     state.player.hp = Math.max(0, state.player.hp - damage);
     
     shakeScreen(8, 500);
+    
+    if (el.playerAvatar) {
+        const avatar = el.playerAvatar;
+        avatar.style.animation = 'playerHit 0.4s ease-in-out';
+        avatar.style.filter = 'brightness(2) drop-shadow(0 0 20px #ef4444)';
+        
+        setTimeout(() => {
+            avatar.style.animation = 'playerIdle 3s ease-in-out infinite';
+            avatar.style.filter = 'drop-shadow(0 3px 10px rgba(16, 185, 129, 0.6))';
+        }, 400);
+    }
+    
     showDamageNumber(damage, 50, 50, '#ef4444');
     showRandomSpeech('player', 'wrong');
     playSound('wrong');
@@ -758,7 +756,6 @@ function checkAnswer() {
     const inputText = el.input.value;
     const wordLength = state.currentWord.length;
     
-    // 입력 길이 검증
     if (inputText.length < 2) {
         if (el.input) el.input.focus();
         return;
@@ -767,7 +764,6 @@ function checkAnswer() {
     state.stats.total++;
     const time = (Date.now() - state.questionTime) / 1000;
     
-    // 아래아(ㆍ)와 가운데점(·) 모두 정규화
     const normalizedInput = inputText.replace(/[ㆍ·]/g, '');
     const normalizedWord = state.currentWord.word.replace(/[ㆍ·]/g, '');
     
@@ -786,9 +782,9 @@ function checkAnswer() {
 function correct(time, wordLength) {
     console.log(`✅ 정답! (${wordLength}글자)`);
     
-    // 정답 효과
     createEffect('✨', 50, 50, 'primary', 'large');
     createRippleEffect(50, 50, '#10b981');
+    shakeScreen(4, 300);
     
     state.stats.correct++;
     state.player.fastTime = Math.min(state.player.fastTime, time);
@@ -796,10 +792,8 @@ function correct(time, wordLength) {
     state.player.combo++;
     state.player.maxCombo = Math.max(state.player.maxCombo, state.player.combo);
     
-    // 콤보 효과
     createComboEffect(state.player.combo);
     
-    // 점수 계산
     const lengthMultiplier = CONFIG.LENGTH_MULTIPLIER[wordLength] || 1.0;
     const timeBonus = Math.max(0, CONFIG.TIME_LIMIT - time) * CONFIG.SCORE_TIME;
     const comboBonus = state.player.combo * CONFIG.SCORE_COMBO;
@@ -807,13 +801,11 @@ function correct(time, wordLength) {
     
     state.player.score += Math.round(baseScore + timeBonus + comboBonus);
     
-    // 데미지 계산
     const baseDamage = calculateDamage(time) * lengthMultiplier;
     
     let finalDamage = baseDamage;
     let defended = false;
     
-    // 방어 체크
     if (state.stage >= 2) {
         const defenseChance = CONFIG.DEFENSE_CHANCE[state.stage - 1];
         if (Math.random() < defenseChance) {
@@ -821,12 +813,12 @@ function correct(time, wordLength) {
             defended = true;
             showRandomSpeech('monster', 'defense');
             createEffect('🛡️', 50, 50, 'primary');
+            shakeScreen(3, 200);
         }
     }
     
     state.monsterHp = Math.max(0, state.monsterHp - finalDamage);
     
-    // 회복 체크
     if (state.stage >= 2 && state.monsterHp > 0) {
         const healChance = CONFIG.HEAL_CHANCE[state.stage - 1];
         if (Math.random() < healChance) {
@@ -836,12 +828,21 @@ function correct(time, wordLength) {
             state.monsterHp = Math.min(state.monsterMaxHp, state.monsterHp + healAmount);
             showRandomSpeech('monster', 'heal');
             createEffect('💚', 50, 50, 'success');
+            shakeScreen(2, 150);
         }
     }
     
-    // 공격 효과
     createAttackEffect(70, 50, 30, 50, '#10b981');
     shakeScreen(6, 400);
+    
+    if (el.monsterAvatar && !defended) {
+        const avatar = el.monsterAvatar;
+        avatar.style.animation = 'hitEffect 0.3s ease-in-out';
+        setTimeout(() => {
+            avatar.style.animation = 'monsterIdle 3s ease-in-out infinite';
+        }, 300);
+    }
+    
     showDamageNumber(finalDamage, 50, 50, defended ? '#6366f1' : '#ef4444');
     showRandomSpeech('player', 'hit');
     
@@ -867,16 +868,34 @@ function correct(time, wordLength) {
 function wrong(time) {
     console.log('❌ 오답!');
     
-    // 오답 효과
     createEffect('💥', 50, 50, 'explosion', 'normal');
     createRippleEffect(50, 50, '#ef4444');
+    shakeScreen(10, 600);
     
     resetCombo();
     
     const damage = calculatePlayerDamage();
     state.player.hp = Math.max(0, state.player.hp - damage);
     
-    shakeScreen(8, 500);
+    if (el.playerAvatar) {
+        const avatar = el.playerAvatar;
+        avatar.style.animation = 'playerHit 0.4s ease-in-out';
+        avatar.style.filter = 'brightness(2) drop-shadow(0 0 20px #ef4444)';
+        
+        setTimeout(() => {
+            avatar.style.animation = 'playerIdle 3s ease-in-out infinite';
+            avatar.style.filter = 'drop-shadow(0 3px 10px rgba(16, 185, 129, 0.6))';
+        }, 400);
+        
+        for (let i = 0; i < 6; i++) {
+            setTimeout(() => {
+                const x = 30 + Math.random() * 40;
+                const y = 30 + Math.random() * 40;
+                createEffect('💔', x, y, 'explosion', 'small');
+            }, i * 50);
+        }
+    }
+    
     showDamageNumber(damage, 50, 50, '#ef4444');
     showRandomSpeech('player', 'wrong');
     showRandomSpeech('monster', 'normal');
@@ -916,13 +935,13 @@ function calculateDamage(time) {
 }
 
 function calculatePlayerDamage() {
-    const base = 20;
-    const stageMulti = 0.8 + (state.stage * 0.08);
+    const base = 24;
+    const stageMulti = 0.8 + (state.stage * 0.1);
     
     let damage = base * stageMulti;
     
     if (state.player.combo >= 5) {
-        damage *= (1 + (state.player.combo * 0.1));
+        damage *= (1 + (state.player.combo * 0.12));
     }
     
     return Math.round(damage);
@@ -942,17 +961,27 @@ function usePotion() {
     const healAmount = CONFIG.POTION_HEAL;
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + healAmount);
     
-    // 물약 효과 강화
     playSound('potion');
     createEffect('🧪', 50, 50, 'explosion', 'large');
+    shakeScreen(4, 400);
     
-    // 회복 효과
-    for (let i = 0; i < 5; i++) {
+    if (el.playerAvatar) {
+        const avatar = el.playerAvatar;
+        avatar.style.animation = 'playerHeal 0.6s ease-out';
+        avatar.style.filter = 'brightness(1.5) drop-shadow(0 0 30px #10b981)';
+        
+        setTimeout(() => {
+            avatar.style.animation = 'playerIdle 3s ease-in-out infinite';
+            avatar.style.filter = 'drop-shadow(0 3px 10px rgba(16, 185, 129, 0.6))';
+        }, 600);
+    }
+    
+    for (let i = 0; i < 8; i++) {
         setTimeout(() => {
             const x = 30 + Math.random() * 40;
             const y = 30 + Math.random() * 40;
             createEffect('💚', x, y, 'float', 'small');
-        }, i * 150);
+        }, i * 100);
     }
     
     updateHpDisplay();
@@ -969,26 +998,31 @@ function defeatMonster() {
     console.log(`🎉 몬스터 처치!`);
     
     showRandomSpeech('monster', 'death');
+    shakeScreen(8, 800);
     
-    // 처치 효과 강화
-    for (let i = 0; i < 12; i++) {
+    if (el.monsterAvatar) {
+        const avatar = el.monsterAvatar;
+        avatar.style.animation = 'monsterDeath 1.2s ease-in forwards';
+        avatar.style.filter = 'brightness(0.5) grayscale(1)';
+    }
+    
+    for (let i = 0; i < 16; i++) {
         setTimeout(() => {
             const angle = Math.random() * Math.PI * 2;
-            const distance = 20 + Math.random() * 30;
+            const distance = 20 + Math.random() * 40;
             const x = 50 + Math.cos(angle) * distance;
             const y = 50 + Math.sin(angle) * distance;
             
             createEffect('💥', x, y, 'explosion', 'small');
-        }, i * 50);
+        }, i * 40);
     }
     
-    // 별 효과
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 10; i++) {
         setTimeout(() => {
             const x = 20 + Math.random() * 60;
             const y = 20 + Math.random() * 60;
             createEffect('⭐', x, y, 'float', 'small');
-        }, i * 100);
+        }, i * 80);
     }
     
     const stageBonus = state.stage * CONFIG.SCORE_STAGE;
@@ -1005,13 +1039,14 @@ function defeatMonster() {
             newQuestion();
             
             playSound('victory');
+            shakeScreen(5, 500);
             
-            // 물약 획득
             if (state.stage % 3 === 0 && state.player.potions < CONFIG.POTION_COUNT) {
                 state.player.potions++;
                 if (el.potionCount) el.potionCount.textContent = state.player.potions;
                 if (el.potionBtn) el.potionBtn.classList.remove('disabled');
                 createEffect('🧪', 50, 50, 'potion');
+                shakeScreen(2, 200);
             }
         }
     }, 1200);
@@ -1033,7 +1068,6 @@ async function gameEnd(isWin) {
     const accuracy = state.stats.total > 0 ? 
         Math.round((state.stats.correct / state.stats.total) * 100) : 0;
     
-    // 게임 데이터
     const gameData = {
         nickname: '익명',
         deviceId: getDeviceId(),
@@ -1047,7 +1081,6 @@ async function gameEnd(isWin) {
         isWin: isWin
     };
     
-    // 랭킹 저장
     try {
         if (typeof window.saveRankingToFirebase === 'function') {
             await window.saveRankingToFirebase(gameData);
@@ -1056,7 +1089,6 @@ async function gameEnd(isWin) {
         console.error('랭킹 저장 실패:', error);
     }
     
-    // 결과 화면
     if (isWin) {
         if (el.finalScore) el.finalScore.textContent = state.player.score.toLocaleString();
         if (el.finalCombo) el.finalCombo.textContent = state.player.maxCombo;
@@ -1125,7 +1157,6 @@ function updateHpDisplay() {
     if (el.monsterHpText) el.monsterHpText.textContent = `${Math.round(state.monsterHp)}/${state.monsterMaxHp}`;
     if (el.playerHpText) el.playerHpText.textContent = `${Math.round(state.player.hp)}/${CONFIG.PLAYER_HP}`;
     
-    // 체력바 색상 효과
     if (monsterPercent < 30) {
         if (el.monsterHpBar) el.monsterHpBar.style.animation = 'pulse 1s infinite';
     } else {
@@ -1179,7 +1210,6 @@ async function renderRankings(type = 'score') {
             return;
         }
         
-        // 사용자별 최고 기록만 필터링
         const bestRecords = {};
         rankings.forEach(rank => {
             if (!bestRecords[rank.deviceId] || rank.score > bestRecords[rank.deviceId].score) {
@@ -1187,7 +1217,6 @@ async function renderRankings(type = 'score') {
             }
         });
         
-        // 배열로 변환 및 정렬
         const uniqueRankings = Object.values(bestRecords)
             .sort((a, b) => b[type] - a[type])
             .slice(0, 10);
