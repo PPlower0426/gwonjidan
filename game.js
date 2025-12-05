@@ -1,4 +1,4 @@
-// game.js - 단순화된 키보드 대응 버전
+// game.js - 키보드 대응 완전 수정 버전
 
 // =================== 전역 변수 ===================
 const CONFIG = {
@@ -115,63 +115,57 @@ function getDeviceId() {
     return deviceId;
 }
 
-// =================== 단순화된 키보드 처리 ===================
+// =================== 키보드 처리 ===================
 function setupKeyboardHandling() {
-    // 입력 필드 포커스/블러 이벤트
-    if (el.input) {
-        el.input.addEventListener('focus', function() {
-            keyboardActive = true;
-            document.body.classList.add('keyboard-active');
-            
-            // 작은 화면일 경우 추가 축소
-            if (window.innerHeight < 600) {
-                const battleArea = document.querySelector('.battle-area');
-                const problemArea = document.querySelector('.problem-area');
-                
-                if (battleArea) {
-                    battleArea.style.transform = 'scale(0.8)';
-                }
-                if (problemArea) {
-                    problemArea.style.transform = 'scale(0.8)';
-                }
-            }
-        });
-        
-        el.input.addEventListener('blur', function() {
-            keyboardActive = false;
-            document.body.classList.remove('keyboard-active');
-            
-            // 레이아웃 복원
-            const battleArea = document.querySelector('.battle-area');
-            const problemArea = document.querySelector('.problem-area');
-            
-            if (battleArea) {
-                battleArea.style.transform = '';
-            }
-            if (problemArea) {
-                problemArea.style.transform = '';
-            }
-        });
-    }
+    if (!el.input) return;
     
-    // 윈도우 크기 변경 감지
+    el.input.addEventListener('focus', function() {
+        keyboardActive = true;
+        document.body.classList.add('keyboard-active');
+        
+        // 키보드 올라올 때 추가 처리
+        setTimeout(() => {
+            // 화면 맨 위로 스크롤
+            window.scrollTo(0, 0);
+            
+            // iOS 대응
+            if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+                document.documentElement.style.height = 'calc(100% - 60px)';
+            }
+        }, 100);
+    });
+    
+    el.input.addEventListener('blur', function() {
+        keyboardActive = false;
+        document.body.classList.remove('keyboard-active');
+        
+        // iOS 대응 복원
+        if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+            document.documentElement.style.height = '100%';
+        }
+    });
+    
+    // 윈도우 리사이즈 대응
     window.addEventListener('resize', function() {
         if (keyboardActive) {
-            // 키보드가 활성화된 상태에서 크기 변경 시 화면 고정
             window.scrollTo(0, 0);
         }
     });
+}
+
+// =================== 헤더 점수 업데이트 ===================
+function updateHeaderScore() {
+    const headerScore = document.getElementById('headerScore');
+    if (headerScore) {
+        headerScore.textContent = state.player.score.toLocaleString();
+    }
 }
 
 // =================== 진동 시스템 ===================
 function vibrate(pattern) {
     if ('vibrate' in navigator) {
         try {
-            if (Array.isArray(pattern)) {
-                navigator.vibrate(pattern);
-            } else {
-                navigator.vibrate(pattern);
-            }
+            navigator.vibrate(pattern);
         } catch (e) {
             console.log('진동 실패:', e);
         }
@@ -180,7 +174,6 @@ function vibrate(pattern) {
 
 // =================== 화면 관리 ===================
 function showScreen(screen) {
-    // 오버레이 컨테이너 내부의 모든 오버레이 비활성화
     const overlaysContainer = document.querySelector('.overlays-container');
     if (overlaysContainer) {
         overlaysContainer.querySelectorAll('.overlay').forEach(overlay => {
@@ -194,17 +187,18 @@ function showScreen(screen) {
         document.querySelector('.problem-area').style.display = 'flex';
         document.querySelector('.input-area').style.display = 'block';
         
-        // 오버레이 컨테이너 숨기기
         if (overlaysContainer) {
             overlaysContainer.style.display = 'none';
         }
+        
+        // 헤더 점수 업데이트
+        updateHeaderScore();
     } else {
         document.querySelector('.game-header').style.display = 'none';
         document.querySelector('.battle-area').style.display = 'none';
         document.querySelector('.problem-area').style.display = 'none';
         document.querySelector('.input-area').style.display = 'none';
         
-        // 오버레이 컨테이너 보이기
         if (overlaysContainer) {
             overlaysContainer.style.display = 'block';
         }
@@ -248,7 +242,7 @@ function showRandomSpeech(speaker = 'monster', type = 'normal') {
     showSpeech(randomText, speaker, type);
 }
 
-// =================== 이펙트 함수들 (간소화) ===================
+// =================== 이펙트 함수들 ===================
 function createEffect(emoji, x, y, type = 'primary', size = 'normal') {
     const layer = document.querySelector('.effects-layer');
     if (!layer) return;
@@ -518,7 +512,7 @@ function setupEvents() {
         });
     });
     
-    // 키보드 처리 설정 추가
+    // 키보드 처리 설정
     setupKeyboardHandling();
 }
 
@@ -639,7 +633,6 @@ function newQuestion() {
     if (el.input) {
         el.input.value = '';
         
-        // 키보드가 활성화되어 있지 않을 때만 포커스
         if (!keyboardActive) {
             setTimeout(() => {
                 el.input.focus();
@@ -757,7 +750,6 @@ function checkAnswer() {
     if (el.input) {
         el.input.value = '';
         
-        // 키보드가 활성화되어 있을 때는 포커스를 유지
         if (keyboardActive) {
             setTimeout(() => {
                 el.input.focus();
@@ -1041,7 +1033,6 @@ async function gameEnd(isWin) {
         state.timer = null;
     }
     
-    // 키보드가 활성화되어 있으면 숨기기
     if (keyboardActive && el.input) {
         el.input.blur();
         keyboardActive = false;
@@ -1101,7 +1092,6 @@ function showSettings() {
     
     state.paused = true;
     
-    // 키보드가 활성화되어 있으면 숨기기
     if (keyboardActive && el.input) {
         el.input.blur();
         keyboardActive = false;
@@ -1131,7 +1121,6 @@ function restartGame() {
         state.timer = null;
     }
     
-    // 키보드 상태 초기화
     if (keyboardActive && el.input) {
         el.input.blur();
         keyboardActive = false;
@@ -1153,6 +1142,8 @@ function updateScoreDisplay() {
     if (el.currentScore) {
         el.currentScore.textContent = state.player.score.toLocaleString();
     }
+    // 헤더 점수 업데이트
+    updateHeaderScore();
 }
 
 function updateHpDisplay() {
@@ -1277,7 +1268,7 @@ async function renderRankings(type = 'score') {
 
 // =================== DOM 로드 시 초기화 ===================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('⚔️ 권지단 어휘대전 - 단순화된 키보드 대응 버전 로딩...');
+    console.log('⚔️ 권지단 어휘대전 - 키보드 대응 완전 수정 버전 로딩...');
     init();
 });
 

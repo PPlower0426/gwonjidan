@@ -1,4 +1,4 @@
-/* style.css - 키보드 대응을 위한 완전 축소 버전 */
+/* style.css - 고밀도 키보드 대응 완전 수정 버전 */
 
 :root {
     --primary: #6366f1;
@@ -22,22 +22,20 @@
     --radius-md: 6px;
     --radius-lg: 8px;
     
-    --font-xs: 10px;
-    --font-sm: 12px;
-    --font-base: 13px;
-    --font-lg: 14px;
-    --font-xl: 16px;
-    --font-2xl: 18px;
-    --font-3xl: 20px;
-    --font-4xl: 22px;
+    --font-xs: 11px;
+    --font-sm: 13px;
+    --font-base: 14px;
+    --font-lg: 16px;
+    --font-xl: 18px;
+    --font-2xl: 20px;
+    --font-3xl: 22px;
+    --font-4xl: 24px;
     
-    --space-xs: 3px;
-    --space-sm: 5px;
-    --space-md: 8px;
-    --space-lg: 10px;
-    --space-xl: 12px;
-    
-    --transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --space-xs: 2px;
+    --space-sm: 4px;
+    --space-md: 6px;
+    --space-lg: 8px;
+    --space-xl: 10px;
 }
 
 * { 
@@ -79,7 +77,7 @@ body {
     min-height: 100%;
 }
 
-/* 오버레이 컨테이너 */
+/* ============ 오버레이 컨테이너 ============ */
 .overlays-container {
     position: absolute;
     top: 0;
@@ -92,8 +90,8 @@ body {
 
 /* ============ 헤더 영역 ============ */
 .game-header {
-    height: 45px;
-    min-height: 45px;
+    height: 48px;
+    min-height: 48px;
     padding: 0 var(--space-md);
     background: var(--surface);
     border-bottom: 1px solid var(--border);
@@ -102,6 +100,7 @@ body {
     justify-content: space-between;
     flex-shrink: 0;
     z-index: 100;
+    position: relative;
 }
 
 .header-left {
@@ -116,82 +115,85 @@ body {
     font-size: var(--font-lg);
     font-weight: 800;
     color: var(--primary);
-    margin-right: var(--space-xs);
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
+/* 헤더 점수 표시 */
+.header-score {
+    display: flex;
+    align-items: center;
+    background: rgba(245, 158, 11, 0.2);
+    border-radius: var(--radius-md);
+    padding: 4px 8px;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    font-size: var(--font-sm);
+    font-weight: 700;
+    gap: 4px;
+    margin-left: auto;
+    margin-right: var(--space-sm);
+    flex-shrink: 0;
+    min-width: 80px;
+    justify-content: center;
+}
+
+.header-score-label {
+    color: var(--warning);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.header-score-value {
+    color: var(--text);
+    font-weight: 800;
+    text-align: center;
+    font-family: 'Inter', monospace;
+    flex: 1;
+}
+
+/* 스테이지 디스플레이 */
 .stage-display {
     display: flex;
     align-items: center;
-    background: rgba(99, 102, 241, 0.15);
+    background: rgba(99, 102, 241, 0.2);
     border-radius: var(--radius-md);
-    padding: 3px 6px;
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    font-size: var(--font-xs);
+    padding: 4px 8px;
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    font-size: var(--font-sm);
     font-weight: 700;
-    gap: 3px;
-    min-width: 70px;
+    gap: 4px;
+    min-width: 80px;
     flex-shrink: 0;
+    justify-content: center;
 }
 
 .stage-label {
     color: var(--primary);
-    font-size: 9px;
+    font-size: 10px;
+    font-weight: 700;
 }
 
 .stage-value {
     color: var(--text);
-    min-width: 14px;
+    min-width: 18px;
     text-align: center;
 }
 
 .stage-slash {
     color: var(--text-light);
     opacity: 0.5;
-    font-size: 10px;
 }
 
 .stage-total {
     color: var(--text-light);
     opacity: 0.7;
-    font-size: 10px;
-}
-
-.score-display {
-    display: flex;
-    align-items: center;
-    background: rgba(245, 158, 11, 0.15);
-    border-radius: var(--radius-md);
-    padding: 3px 6px;
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    font-size: var(--font-xs);
-    font-weight: 700;
-    gap: 3px;
-    min-width: 75px;
-    margin-left: auto;
-    flex-shrink: 0;
-}
-
-.score-label {
-    color: var(--warning);
-    font-size: 9px;
-}
-
-.score-value {
-    color: var(--text);
-    min-width: 40px;
-    text-align: center;
-    font-family: 'Inter', monospace;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: var(--font-xs);
 }
 
 .menu-btn {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.1);
     border: 1px solid var(--border);
     color: var(--text);
     font-size: var(--font-base);
@@ -199,19 +201,19 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: var(--transition);
+    transition: all 0.2s ease;
     flex-shrink: 0;
 }
 
 .menu-btn:active {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.15);
     transform: scale(0.95);
 }
 
-/* ============ 배틀 영역 (최소화) ============ */
+/* ============ 배틀 영역 ============ */
 .battle-area {
-    height: 100px;
-    min-height: 100px;
+    height: 90px;
+    min-height: 90px;
     padding: var(--space-sm) var(--space-md);
     display: grid;
     grid-template-columns: 1fr auto 1fr;
@@ -249,11 +251,11 @@ body {
 .combatant-info {
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 2px;
 }
 
 .combatant-name {
-    font-size: var(--font-xs);
+    font-size: var(--font-sm);
     font-weight: 700;
     white-space: nowrap;
 }
@@ -267,9 +269,9 @@ body {
 }
 
 .combatant-level {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 800;
-    padding: 1px 3px;
+    padding: 2px 4px;
     border-radius: var(--radius-sm);
     border: 1px solid;
     white-space: nowrap;
@@ -346,7 +348,7 @@ body {
     border-radius: 3px;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    min-width: 50px;
+    min-width: 60px;
 }
 
 .health-bar-fill {
@@ -388,9 +390,9 @@ body {
 }
 
 .health-text {
-    font-size: var(--font-xs);
+    font-size: var(--font-sm);
     font-weight: 800;
-    min-width: 40px;
+    min-width: 45px;
     text-align: center;
     white-space: nowrap;
 }
@@ -517,7 +519,7 @@ body {
     font-weight: 600;
 }
 
-/* ============ 문제 영역 (완전 축소) ============ */
+/* ============ 문제 영역 ============ */
 .problem-area {
     margin: var(--space-sm);
     background: linear-gradient(135deg, var(--surface), var(--surface-light));
@@ -525,7 +527,7 @@ body {
     padding: var(--space-sm);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
     flex: 1;
-    min-height: 90px;
+    min-height: 85px;
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
@@ -613,7 +615,7 @@ body {
     align-items: center;
     justify-content: center;
     position: relative;
-    transition: var(--transition);
+    transition: all 0.2s ease;
     box-shadow: 0 3px 8px rgba(139, 92, 246, 0.3);
     flex-shrink: 0;
 }
@@ -634,7 +636,7 @@ body {
     right: -3px;
     background: var(--danger);
     color: white;
-    font-size: 9px;
+    font-size: 10px;
     width: 18px;
     height: 18px;
     border-radius: 50%;
@@ -650,8 +652,8 @@ body {
     display: flex;
     flex-direction: column;
     flex: 1;
-    height: 50px;
-    min-height: 50px;
+    height: 45px;
+    min-height: 45px;
     justify-content: center;
     overflow: hidden;
 }
@@ -674,18 +676,18 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-    transition: var(--transition);
+    transition: all 0.2s ease;
     flex-shrink: 0;
 }
 
-/* ============ 입력 영역 (최소화) ============ */
+/* ============ 입력 영역 ============ */
 .input-area {
     padding: var(--space-sm) var(--space-md);
     background: var(--surface);
     border-top: 1px solid var(--border);
     flex-shrink: 0;
     position: relative;
-    min-height: 70px;
+    min-height: 65px;
 }
 
 .word-input {
@@ -695,14 +697,14 @@ body {
     padding: 0 var(--space-md);
     font-size: var(--font-xl);
     font-weight: 800;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.1);
     border: 2px solid var(--border);
     border-radius: var(--radius-md);
     color: var(--text);
     text-align: center;
     letter-spacing: 6px;
     outline: none;
-    transition: var(--transition);
+    transition: all 0.2s ease;
     font-family: 'Inter', sans-serif;
     -webkit-appearance: none;
     appearance: none;
@@ -710,8 +712,8 @@ body {
 
 .word-input:focus {
     border-color: var(--primary);
-    background: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 .word-input::placeholder {
@@ -724,110 +726,32 @@ body {
 /* ============ 키보드 활성화 시 특별 스타일 ============ */
 .keyboard-active .game-container {
     overflow: hidden;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* 키보드 올라올 때 콘텐츠 보호 */
 .keyboard-active .battle-area {
-    height: 80px;
-    min-height: 80px;
-    padding: var(--space-xs) var(--space-sm);
-    transform: scale(0.9);
-    transform-origin: top center;
-}
-
-.keyboard-active .avatar-circle {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
-}
-
-.keyboard-active .monster-avatar {
-    font-size: 20px;
-}
-
-.keyboard-active .player-avatar {
-    font-size: 18px;
-}
-
-.keyboard-active .combatant-name {
-    font-size: 10px;
-}
-
-.keyboard-active .combatant-level {
-    font-size: 8px;
-    padding: 1px 2px;
-}
-
-.keyboard-active .health-bar-container {
-    height: 5px;
-    min-height: 5px;
-}
-
-.keyboard-active .health-text {
-    font-size: 10px;
-    min-width: 35px;
-}
-
-.keyboard-active .time-display {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    min-height: 36px;
-    font-size: var(--font-lg);
+    height: 85px !important;
+    min-height: 85px !important;
+    padding: var(--space-xs) var(--space-md) !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .keyboard-active .problem-area {
-    margin: var(--space-xs);
-    padding: var(--space-xs);
-    min-height: 70px;
-    transform: scale(0.9);
-    transform-origin: top center;
+    margin: var(--space-xs) var(--space-md) !important;
+    padding: var(--space-xs) !important;
+    min-height: 80px !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    margin-bottom: 70px !important; /* 입력 영역과 겹치지 않도록 */
 }
 
-.keyboard-active .hint-line {
-    height: 32px;
-    min-height: 32px;
-}
-
-.keyboard-active .initial-display {
-    font-size: var(--font-lg);
-    height: 32px;
-    min-height: 32px;
-    letter-spacing: 3px;
-    padding: 2px;
-}
-
-.keyboard-active .potion-btn {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
-    font-size: var(--font-sm);
-}
-
-.keyboard-active .potion-count {
-    width: 16px;
-    height: 16px;
-    font-size: 8px;
-    bottom: -2px;
-    right: -2px;
-}
-
-.keyboard-active .meaning-section {
-    height: 40px;
-    min-height: 40px;
-}
-
-.keyboard-active .meaning-display {
-    font-size: 11px;
-    line-height: 1.2;
-    padding: 3px;
-}
-
+/* 입력 영역 고정 */
 .keyboard-active .input-area {
-    padding: var(--space-xs) var(--space-sm);
-    min-height: 60px;
-    position: fixed;
+    position: fixed !important;
     bottom: 0;
     left: 0;
     right: 0;
@@ -836,15 +760,92 @@ body {
     z-index: 10000;
     background: var(--surface);
     border-top: 2px solid var(--primary);
-    box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.6);
+    padding: var(--space-xs) var(--space-md);
+    min-height: 60px;
+    height: auto;
+    padding-bottom: max(var(--space-md), env(safe-area-inset-bottom, var(--space-md)));
+}
+
+/* 폰트 크기 유지 */
+.keyboard-active .initial-display {
+    font-size: var(--font-lg) !important;
+    height: 38px;
+    min-height: 38px;
+}
+
+.keyboard-active .meaning-display {
+    font-size: var(--font-sm) !important;
+    height: 42px;
+    min-height: 42px;
+    line-height: 1.2;
 }
 
 .keyboard-active .word-input {
-    height: 42px;
-    min-height: 42px;
+    height: 44px;
+    min-height: 44px;
+    font-size: var(--font-lg) !important;
+    letter-spacing: 5px;
+}
+
+/* 작은 요소 조정 */
+.keyboard-active .avatar-circle {
+    width: 45px;
+    height: 45px;
+    min-width: 45px;
+    min-height: 45px;
+}
+
+.keyboard-active .monster-avatar {
+    font-size: 22px;
+}
+
+.keyboard-active .player-avatar {
+    font-size: 20px;
+}
+
+.keyboard-active .combatant-name {
+    font-size: var(--font-xs);
+}
+
+.keyboard-active .combatant-level {
+    font-size: 9px;
+    padding: 1px 3px;
+}
+
+.keyboard-active .health-bar-container {
+    height: 5px;
+    min-height: 5px;
+    min-width: 50px;
+}
+
+.keyboard-active .health-text {
+    font-size: var(--font-xs);
+    min-width: 40px;
+}
+
+.keyboard-active .time-display {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
     font-size: var(--font-lg);
-    letter-spacing: 4px;
-    padding: 0 var(--space-sm);
+}
+
+.keyboard-active .potion-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    font-size: var(--font-sm);
+}
+
+.keyboard-active .potion-count {
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+    bottom: -2px;
+    right: -2px;
 }
 
 /* ============ 오버레이 스타일 ============ */
@@ -968,7 +969,7 @@ body {
     justify-content: center;
     gap: var(--space-sm);
     margin-bottom: var(--space-xl);
-    transition: var(--transition);
+    transition: all 0.2s ease;
 }
 
 .start-button:active {
@@ -1092,7 +1093,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: var(--space-sm);
-    transition: var(--transition);
+    transition: all 0.2s ease;
 }
 
 .btn.primary {
@@ -1154,7 +1155,7 @@ body {
     font-weight: 600;
     cursor: pointer;
     border-radius: var(--radius-sm);
-    transition: var(--transition);
+    transition: all 0.2s ease;
     text-align: center;
 }
 
@@ -1329,6 +1330,21 @@ body {
     gap: var(--space-sm);
 }
 
+/* 오버레이 키보드 대응 */
+.keyboard-active .overlay {
+    position: fixed;
+    padding-top: 20vh;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+}
+
+.keyboard-active .overlay-content {
+    margin-top: 10px;
+    margin-bottom: 20px;
+    max-height: calc(100vh - 150px);
+}
+
+/* ============ 애니메이션 ============ */
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -1439,6 +1455,13 @@ body {
     100% { transform: rotate(360deg); }
 }
 
+@keyframes speechAppear {
+    0% { opacity: 0; transform: translateY(10px); }
+    15% { opacity: 1; transform: translateY(0); }
+    85% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); }
+}
+
 .effects-layer, .damage-layer {
     position: absolute;
     top: 0;
@@ -1499,8 +1522,8 @@ body {
 /* ============ 반응형 디자인 ============ */
 @media (max-width: 380px) {
     .game-header {
-        height: 40px;
-        min-height: 40px;
+        height: 44px;
+        min-height: 44px;
         padding: 0 var(--space-sm);
     }
     
@@ -1508,225 +1531,82 @@ body {
         font-size: var(--font-base);
     }
     
+    .header-score {
+        min-width: 70px;
+        padding: 3px 6px;
+    }
+    
+    .header-score-label {
+        font-size: 9px;
+    }
+    
+    .header-score-value {
+        font-size: var(--font-xs);
+    }
+    
     .stage-display {
-        min-width: 60px;
-        padding: 2px 4px;
+        min-width: 70px;
+        padding: 3px 6px;
     }
     
-    .score-display {
-        min-width: 60px;
-        padding: 2px 4px;
+    .stage-label {
+        font-size: 9px;
     }
     
-    .score-value {
-        min-width: 35px;
-        font-size: 10px;
-    }
-    
-    .menu-btn {
-        width: 30px;
-        height: 30px;
-        font-size: var(--font-sm);
-    }
-    
-    .battle-area {
-        height: 90px;
-        min-height: 90px;
-        padding: var(--space-xs) var(--space-sm);
-    }
-    
-    .keyboard-active .battle-area {
-        height: 70px;
-        min-height: 70px;
-        transform: scale(0.85);
-    }
-    
-    .avatar-circle {
-        width: 44px;
-        height: 44px;
-        min-width: 44px;
-        min-height: 44px;
-    }
-    
-    .keyboard-active .avatar-circle {
-        width: 36px;
-        height: 36px;
-        min-width: 36px;
-        min-height: 36px;
-    }
-    
-    .monster-avatar {
-        font-size: 22px;
-    }
-    
-    .keyboard-active .monster-avatar {
-        font-size: 18px;
-    }
-    
-    .player-avatar {
-        font-size: 20px;
-    }
-    
-    .keyboard-active .player-avatar {
-        font-size: 16px;
-    }
-    
-    .combatant-name {
-        font-size: 10px;
-    }
-    
-    .combatant-level {
-        font-size: 8px;
-    }
-    
-    .health-bar-container {
-        min-width: 40px;
-    }
-    
-    .health-text {
-        min-width: 35px;
-        font-size: 10px;
-    }
-    
-    .time-display {
-        width: 38px;
-        height: 38px;
-        min-width: 38px;
-        min-height: 38px;
-        font-size: var(--font-lg);
-    }
-    
-    .keyboard-active .time-display {
-        width: 32px;
-        height: 32px;
-        min-width: 32px;
-        min-height: 32px;
-        font-size: var(--font-base);
-    }
-    
-    .problem-area {
-        min-height: 80px;
-        margin: var(--space-xs);
-        padding: var(--space-xs);
-    }
-    
-    .keyboard-active .problem-area {
-        min-height: 60px;
-        transform: scale(0.85);
-    }
-    
-    .hint-line {
-        height: 36px;
-        min-height: 36px;
-    }
-    
-    .keyboard-active .hint-line {
-        height: 28px;
-        min-height: 28px;
-    }
-    
-    .initial-display {
-        font-size: var(--font-lg);
-        height: 36px;
-        min-height: 36px;
-        letter-spacing: 3px;
-    }
-    
-    .keyboard-active .initial-display {
-        font-size: var(--font-base);
-        height: 28px;
-        min-height: 28px;
-        letter-spacing: 2px;
-    }
-    
-    .meaning-display {
-        font-size: 11px;
-        height: 44px;
-        min-height: 44px;
-        line-height: 1.2;
-    }
-    
-    .keyboard-active .meaning-display {
-        font-size: 10px;
-        height: 36px;
-        min-height: 36px;
-        line-height: 1.1;
-    }
-    
-    .potion-btn {
-        width: 36px;
-        height: 36px;
-        min-width: 36px;
-        min-height: 36px;
-    }
-    
-    .keyboard-active .potion-btn {
-        width: 28px;
-        height: 28px;
-        min-width: 28px;
-        min-height: 28px;
-    }
-    
-    .input-area {
-        padding: var(--space-xs) var(--space-sm);
-        min-height: 65px;
-    }
-    
-    .keyboard-active .input-area {
-        min-height: 55px;
-        padding: var(--space-xs);
-    }
-    
-    .word-input {
-        height: 44px;
-        min-height: 44px;
-        font-size: var(--font-lg);
-        letter-spacing: 4px;
-        padding: 0 var(--space-sm);
-    }
-    
-    .keyboard-active .word-input {
-        height: 38px;
-        min-height: 38px;
-        font-size: var(--font-base);
-        letter-spacing: 3px;
-    }
-    
-    .speech-bubble {
-        max-width: 140px;
-        padding: 4px 8px;
-        font-size: 10px;
-    }
-    
-    .speech-content {
-        font-size: 10px;
-    }
-}
-
-@media (max-height: 600px) {
     .battle-area {
         height: 85px;
         min-height: 85px;
     }
     
     .keyboard-active .battle-area {
-        height: 65px;
-        min-height: 65px;
-        transform: scale(0.8);
+        height: 80px !important;
+        min-height: 80px !important;
     }
     
     .avatar-circle {
-        width: 40px;
-        height: 40px;
-        min-width: 40px;
-        min-height: 40px;
+        width: 46px;
+        height: 46px;
+        min-width: 46px;
+        min-height: 46px;
     }
     
     .keyboard-active .avatar-circle {
-        width: 32px;
-        height: 32px;
-        min-width: 32px;
-        min-height: 32px;
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        min-height: 42px;
+    }
+    
+    .problem-area {
+        min-height: 80px;
+    }
+    
+    .keyboard-active .problem-area {
+        min-height: 75px !important;
+    }
+    
+    .word-input {
+        height: 46px;
+        min-height: 46px;
+        font-size: var(--font-lg);
+    }
+    
+    .keyboard-active .word-input {
+        height: 42px;
+        min-height: 42px;
+        font-size: var(--font-base) !important;
+    }
+}
+
+@media (max-height: 650px) {
+    .battle-area {
+        height: 80px;
+        min-height: 80px;
+    }
+    
+    .keyboard-active .battle-area {
+        height: 75px !important;
+        min-height: 75px !important;
     }
     
     .problem-area {
@@ -1734,19 +1614,37 @@ body {
     }
     
     .keyboard-active .problem-area {
-        min-height: 55px;
-        transform: scale(0.8);
+        min-height: 70px !important;
+    }
+    
+    .initial-display {
+        font-size: var(--font-lg);
     }
     
     .meaning-display {
-        height: 40px;
-        min-height: 40px;
-        font-size: 11px;
+        font-size: 12px;
+    }
+}
+
+@media (max-height: 550px) {
+    .battle-area {
+        height: 75px;
+        min-height: 75px;
     }
     
-    .keyboard-active .meaning-display {
-        height: 32px;
-        min-height: 32px;
-        font-size: 9px;
+    .problem-area {
+        min-height: 70px;
+    }
+    
+    .initial-display {
+        font-size: var(--font-lg);
+        height: 36px;
+        min-height: 36px;
+    }
+    
+    .meaning-display {
+        font-size: 11px;
+        height: 40px;
+        min-height: 40px;
     }
 }
