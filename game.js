@@ -1,4 +1,4 @@
-// game.js - 최종 개선 버전
+// game.js - 키보드 대응 최적화 버전
 
 // =================== 전역 변수 ===================
 const CONFIG = {
@@ -103,6 +103,8 @@ let state = {
 
 // 전역 DOM 요소
 let el = {};
+let keyboardActive = false;
+let originalWindowHeight = window.innerHeight;
 
 // =================== 유틸리티 함수 ===================
 function getDeviceId() {
@@ -112,6 +114,119 @@ function getDeviceId() {
         localStorage.setItem('kjd_device_id', deviceId);
     }
     return deviceId;
+}
+
+// =================== 키보드 대응 시스템 ===================
+function setupKeyboardHandling() {
+    // 입력 필드 포커스/블러 이벤트
+    if (el.input) {
+        el.input.addEventListener('focus', function() {
+            keyboardActive = true;
+            document.body.classList.add('keyboard-active');
+            
+            // 작은 화면일 경우 추가 처리
+            if (window.innerHeight < 600) {
+                adjustForSmallScreenWithKeyboard();
+            }
+            
+            // 일정 시간 후 자동으로 스크롤 방지
+            setTimeout(() => {
+                window.scrollTo(0, 0);
+            }, 100);
+        });
+        
+        el.input.addEventListener('blur', function() {
+            keyboardActive = false;
+            document.body.classList.remove('keyboard-active');
+            
+            // 레이아웃 복원
+            restoreLayoutAfterKeyboard();
+        });
+    }
+    
+    // 윈도우 크기 변경 감지 (키보드 나타남/사라짐)
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            handleWindowResize();
+        }, 100);
+    });
+    
+    // 터치 이벤트로 키보드 외부 터치 시 키보드 숨기기
+    document.addEventListener('touchstart', function(e) {
+        if (keyboardActive && el.input && !el.input.contains(e.target)) {
+            // 입력 필드 외부 터치 시 키보드 숨기기
+            el.input.blur();
+        }
+    });
+}
+
+function handleWindowResize() {
+    const currentHeight = window.innerHeight;
+    
+    // 키보드가 나타난 것으로 판단 (화면 높이가 줄어듦)
+    if (currentHeight < originalWindowHeight * 0.7) {
+        if (!keyboardActive) {
+            keyboardActive = true;
+            document.body.classList.add('keyboard-active');
+        }
+    } 
+    // 키보드가 사라진 것으로 판단
+    else if (currentHeight > originalWindowHeight * 0.9) {
+        if (keyboardActive) {
+            keyboardActive = false;
+            document.body.classList.remove('keyboard-active');
+        }
+    }
+    
+    originalWindowHeight = currentHeight;
+}
+
+function adjustForSmallScreenWithKeyboard() {
+    // 작은 화면에서 키보드가 나타날 때 추가 조정
+    const battleArea = document.querySelector('.battle-area');
+    const problemArea = document.querySelector('.problem-area');
+    
+    if (battleArea && problemArea) {
+        battleArea.style.transform = 'translateY(-50px)';
+        battleArea.style.height = '100px';
+        battleArea.style.minHeight = '100px';
+        
+        problemArea.style.transform = 'translateY(-50px)';
+        problemArea.style.minHeight = '90px';
+        problemArea.style.flex = '0.7';
+        
+        const meaningDisplay = document.querySelector('.meaning-display');
+        if (meaningDisplay) {
+            meaningDisplay.style.fontSize = '11px';
+            meaningDisplay.style.padding = '4px';
+            meaningDisplay.style.lineHeight = '1.2';
+        }
+    }
+}
+
+function restoreLayoutAfterKeyboard() {
+    // 레이아웃 복원
+    const battleArea = document.querySelector('.battle-area');
+    const problemArea = document.querySelector('.problem-area');
+    
+    if (battleArea && problemArea) {
+        battleArea.style.transform = '';
+        battleArea.style.height = '';
+        battleArea.style.minHeight = '';
+        
+        problemArea.style.transform = '';
+        problemArea.style.minHeight = '';
+        problemArea.style.flex = '';
+        
+        const meaningDisplay = document.querySelector('.meaning-display');
+        if (meaningDisplay) {
+            meaningDisplay.style.fontSize = '';
+            meaningDisplay.style.padding = '';
+            meaningDisplay.style.lineHeight = '';
+        }
+    }
 }
 
 // =================== 진동 시스템 ===================
@@ -131,25 +246,47 @@ function vibrate(pattern) {
 
 // =================== 화면 관리 ===================
 function showScreen(screen) {
-    document.querySelectorAll('.overlay').forEach(overlay => {
-        overlay.classList.remove('active');
-    });
+    // 오버레이 컨테이너 내부의 모든 오버레이 비활성화
+    const overlaysContainer = document.querySelector('.overlays-container');
+    if (overlaysContainer) {
+        overlaysContainer.querySelectorAll('.overlay').forEach(overlay => {
+            overlay.classList.remove('active');
+        });
+    }
     
     if (screen === 'game') {
         document.querySelector('.game-header').style.display = 'flex';
         document.querySelector('.battle-area').style.display = 'grid';
         document.querySelector('.problem-area').style.display = 'flex';
         document.querySelector('.input-area').style.display = 'block';
+        
+        // 오버레이 컨테이너 숨기기
+        if (overlaysContainer) {
+            overlaysContainer.style.display = 'none';
+        }
     } else {
         document.querySelector('.game-header').style.display = 'none';
         document.querySelector('.battle-area').style.display = 'none';
         document.querySelector('.problem-area').style.display = 'none';
         document.querySelector('.input-area').style.display = 'none';
         
+        // 오버레이 컨테이너 보이기
+        if (overlaysContainer) {
+            overlaysContainer.style.display = 'block';
+        }
+        
         const target = document.querySelector(`.${screen}-screen`);
         if (target) {
             target.classList.add('active');
         }
+    }
+    
+    // 키보드 상태 초기화
+    if (keyboardActive && el.input) {
+        el.input.blur();
+        keyboardActive = false;
+        document.body.classList.remove('keyboard-active');
+        restoreLayoutAfterKeyboard();
     }
 }
 
@@ -548,6 +685,9 @@ function setupEvents() {
             renderRankings(type);
         });
     });
+    
+    // 키보드 처리 설정 추가
+    setupKeyboardHandling();
 }
 
 // =================== 게임 초기화 ===================
@@ -558,6 +698,9 @@ async function init() {
     getDeviceId();
     await loadWords();
     setupEvents();
+    
+    // 초기 윈도우 높이 저장
+    originalWindowHeight = window.innerHeight;
     
     console.log('✅ 게임 준비 완료');
 }
@@ -683,7 +826,13 @@ function newQuestion() {
     
     if (el.input) {
         el.input.value = '';
-        el.input.focus();
+        
+        // 키보드가 활성화되어 있지 않을 때만 포커스
+        if (!keyboardActive) {
+            setTimeout(() => {
+                el.input.focus();
+            }, 100);
+        }
     }
     
     state.timeLeft = CONFIG.TIME_LIMIT;
@@ -795,7 +944,13 @@ function checkAnswer() {
     
     if (el.input) {
         el.input.value = '';
-        el.input.focus();
+        
+        // 키보드가 활성화되어 있을 때는 포커스를 유지
+        if (keyboardActive) {
+            setTimeout(() => {
+                el.input.focus();
+            }, 10);
+        }
     }
 }
 
@@ -1102,6 +1257,14 @@ async function gameEnd(isWin) {
         state.timer = null;
     }
     
+    // 키보드가 활성화되어 있으면 숨기기
+    if (keyboardActive && el.input) {
+        el.input.blur();
+        keyboardActive = false;
+        document.body.classList.remove('keyboard-active');
+        restoreLayoutAfterKeyboard();
+    }
+    
     const accuracy = state.stats.total > 0 ? 
         Math.round((state.stats.correct / state.stats.total) * 100) : 0;
     
@@ -1155,6 +1318,14 @@ function showSettings() {
     
     state.paused = true;
     
+    // 키보드가 활성화되어 있으면 숨기기
+    if (keyboardActive && el.input) {
+        el.input.blur();
+        keyboardActive = false;
+        document.body.classList.remove('keyboard-active');
+        restoreLayoutAfterKeyboard();
+    }
+    
     if (el.settingsStage) el.settingsStage.textContent = `Lv.${state.stage}`;
     if (el.settingsPotion) el.settingsPotion.textContent = state.player.potions;
     
@@ -1166,7 +1337,9 @@ function resumeGame() {
     showScreen('game');
     
     setTimeout(() => {
-        if (el.input) el.input.focus();
+        if (el.input && !keyboardActive) {
+            el.input.focus();
+        }
     }, 300);
 }
 
@@ -1174,6 +1347,14 @@ function restartGame() {
     if (state.timer) {
         clearInterval(state.timer);
         state.timer = null;
+    }
+    
+    // 키보드 상태 초기화
+    if (keyboardActive && el.input) {
+        el.input.blur();
+        keyboardActive = false;
+        document.body.classList.remove('keyboard-active');
+        restoreLayoutAfterKeyboard();
     }
     
     startGame();
@@ -1315,7 +1496,7 @@ async function renderRankings(type = 'score') {
 
 // =================== DOM 로드 시 초기화 ===================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('⚔️ 권지단 어휘대전 - 최종 버전 로딩...');
+    console.log('⚔️ 권지단 어휘대전 - 키보드 대응 최적화 버전 로딩...');
     init();
 });
 

@@ -16,7 +16,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; background: #0a0a0f; color: #fff; position: fixed; }
-        .game-container { width: 100%; height: 100vh; height: -webkit-fill-available; max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; background: #0a0a0f; overflow: hidden; }
+        .game-container { width: 100%; height: 100vh; height: -webkit-fill-available; max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; background: #0a0a0f; overflow: hidden; position: relative; }
         
         /* 애니메이션 정의 */
         @keyframes monsterSpawn {
@@ -63,6 +63,40 @@
             0% { transform: scale(1); filter: brightness(1); }
             50% { transform: scale(0.9); filter: brightness(1.5); }
             100% { transform: scale(1); filter: brightness(1); }
+        }
+        
+        /* 키보드 대응을 위한 추가 애니메이션 */
+        @keyframes slideUpForKeyboard {
+            from { transform: translateY(0); }
+            to { transform: translateY(-150px); }
+        }
+        
+        @keyframes slideDownForKeyboard {
+            from { transform: translateY(-150px); }
+            to { transform: translateY(0); }
+        }
+        
+        /* 키보드 활성화 시 스타일 */
+        .keyboard-active .battle-area {
+            animation: slideUpForKeyboard 0.3s ease forwards;
+        }
+        
+        .keyboard-active .problem-area {
+            animation: slideUpForKeyboard 0.3s ease forwards;
+            animation-delay: 0.05s;
+        }
+        
+        .keyboard-active .input-area {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 500px;
+            margin: 0 auto;
+            z-index: 10000;
+            background: var(--surface);
+            border-top: 2px solid var(--primary);
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
         }
     </style>
 </head>
@@ -171,201 +205,204 @@
             </div>
         </div>
         
-        <div class="overlay start-screen active">
-            <div class="overlay-content">
-                <div class="welcome-screen">
-                    <div class="title-section">
-                        <div class="title-icon">⚔️</div>
-                        <h1>권지단</h1>
-                        <h2>어휘대전</h2>
-                    </div>
-                    
-                    <div class="welcome-message">
-                        <p>초성과 뜻을 보고 단어를 맞춰<br>몬스터를 물리치는 고밀도 어휘 대결!</p>
-                    </div>
-                    
-                    <div class="game-features">
-                        <div class="feature"><span>🎯</span> 2~5글자 고급어휘</div>
-                        <div class="feature"><span>⚔️</span> 10단계 대결</div>
-                        <div class="feature"><span>🔥</span> 콤보 시스템</div>
-                        <div class="feature"><span>🧪</span> 물약 회복</div>
-                    </div>
-                    
-                    <button class="start-button" id="startBtn">
-                        <i class="fas fa-play"></i> 대결 시작
-                    </button>
-                    
-                    <div class="game-guide">
-                        <h3><i class="fas fa-graduation-cap"></i> 게임 방법</h3>
-                        <ol>
-                            <li>초성과 뜻을 보고 단어 입력 (2~5글자)</li>
-                            <li>정답 → 몬스터 공격 / 오답 → 플레이어 피해</li>
-                            <li>콤보 유지 시 강력한 공격</li>
-                            <li>물약으로 체력 회복 가능</li>
-                            <li>10단계 몬스터 물리치면 승리!</li>
-                        </ol>
+        <!-- 모든 오버레이를 하나의 컨테이너로 묶음 -->
+        <div class="overlays-container">
+            <div class="overlay start-screen active">
+                <div class="overlay-content">
+                    <div class="welcome-screen">
+                        <div class="title-section">
+                            <div class="title-icon">⚔️</div>
+                            <h1>권지단</h1>
+                            <h2>어휘대전</h2>
+                        </div>
+                        
+                        <div class="welcome-message">
+                            <p>초성과 뜻을 보고 단어를 맞춰<br>몬스터를 물리치는 고밀도 어휘 대결!</p>
+                        </div>
+                        
+                        <div class="game-features">
+                            <div class="feature"><span>🎯</span> 2~5글자 고급어휘</div>
+                            <div class="feature"><span>⚔️</span> 10단계 대결</div>
+                            <div class="feature"><span>🔥</span> 콤보 시스템</div>
+                            <div class="feature"><span>🧪</span> 물약 회복</div>
+                        </div>
+                        
+                        <button class="start-button" id="startBtn">
+                            <i class="fas fa-play"></i> 대결 시작
+                        </button>
+                        
+                        <div class="game-guide">
+                            <h3><i class="fas fa-graduation-cap"></i> 게임 방법</h3>
+                            <ol>
+                                <li>초성과 뜻을 보고 단어 입력 (2~5글자)</li>
+                                <li>정답 → 몬스터 공격 / 오답 → 플레이어 피해</li>
+                                <li>콤보 유지 시 강력한 공격</li>
+                                <li>물약으로 체력 회복 가능</li>
+                                <li>10단계 몬스터 물리치면 승리!</li>
+                            </ol>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="overlay settings-screen">
-            <div class="overlay-content">
-                <div class="settings-header">
-                    <i class="fas fa-cog"></i>
-                    <h2>설정</h2>
-                </div>
-                
-                <div class="settings-stats">
-                    <div class="setting-stat">
-                        <div class="stat-icon">⚔️</div>
-                        <div class="stat-info">
-                            <div class="stat-label">스테이지</div>
-                            <div class="stat-value" id="settingsStage">Lv.1</div>
+            
+            <div class="overlay settings-screen">
+                <div class="overlay-content">
+                    <div class="settings-header">
+                        <i class="fas fa-cog"></i>
+                        <h2>설정</h2>
+                    </div>
+                    
+                    <div class="settings-stats">
+                        <div class="setting-stat">
+                            <div class="stat-icon">⚔️</div>
+                            <div class="stat-info">
+                                <div class="stat-label">스테이지</div>
+                                <div class="stat-value" id="settingsStage">Lv.1</div>
+                            </div>
+                        </div>
+                        <div class="setting-stat">
+                            <div class="stat-icon">🧪</div>
+                            <div class="stat-info">
+                                <div class="stat-label">물약</div>
+                                <div class="stat-value" id="settingsPotion">2</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="setting-stat">
-                        <div class="stat-icon">🧪</div>
-                        <div class="stat-info">
-                            <div class="stat-label">물약</div>
-                            <div class="stat-value" id="settingsPotion">2</div>
-                        </div>
+                    
+                    <div class="settings-actions">
+                        <button class="btn primary" id="resumeBtn">
+                            <i class="fas fa-play"></i> 게임 계속
+                        </button>
+                        <button class="btn secondary" id="settingsRankingBtn">
+                            <i class="fas fa-trophy"></i> 랭킹 보기
+                        </button>
+                        <button class="btn secondary" id="restartBtn">
+                            <i class="fas fa-redo"></i> 다시 시작
+                        </button>
+                        <button class="btn secondary" id="quitBtn">
+                            <i class="fas fa-home"></i> 시작 화면
+                        </button>
                     </div>
-                </div>
-                
-                <div class="settings-actions">
-                    <button class="btn primary" id="resumeBtn">
-                        <i class="fas fa-play"></i> 게임 계속
-                    </button>
-                    <button class="btn secondary" id="settingsRankingBtn">
-                        <i class="fas fa-trophy"></i> 랭킹 보기
-                    </button>
-                    <button class="btn secondary" id="restartBtn">
-                        <i class="fas fa-redo"></i> 다시 시작
-                    </button>
-                    <button class="btn secondary" id="quitBtn">
-                        <i class="fas fa-home"></i> 시작 화면
-                    </button>
                 </div>
             </div>
-        </div>
-        
-        <div class="overlay ranking-screen">
-            <div class="overlay-content">
-                <div class="ranking-header">
-                    <div class="ranking-icon">🏆</div>
-                    <h2>랭킹</h2>
-                </div>
-                
-                <div class="ranking-controls">
-                    <button class="ranking-tab active" data-type="score">최고 점수</button>
-                    <button class="ranking-tab" data-type="stage">최고 단계</button>
-                    <button class="ranking-tab" data-type="combo">최고 콤보</button>
-                </div>
-                
-                <div class="ranking-list" id="rankingList">
-                    <div class="loading-rankings">
-                        <i class="fas fa-spinner fa-spin"></i> 랭킹 로딩 중...
+            
+            <div class="overlay ranking-screen">
+                <div class="overlay-content">
+                    <div class="ranking-header">
+                        <div class="ranking-icon">🏆</div>
+                        <h2>랭킹</h2>
                     </div>
-                </div>
-                
-                <div class="ranking-actions">
-                    <button class="btn secondary" id="closeRankingBtn">
-                        <i class="fas fa-arrow-left"></i> 돌아가기
-                    </button>
+                    
+                    <div class="ranking-controls">
+                        <button class="ranking-tab active" data-type="score">최고 점수</button>
+                        <button class="ranking-tab" data-type="stage">최고 단계</button>
+                        <button class="ranking-tab" data-type="combo">최고 콤보</button>
+                    </div>
+                    
+                    <div class="ranking-list" id="rankingList">
+                        <div class="loading-rankings">
+                            <i class="fas fa-spinner fa-spin"></i> 랭킹 로딩 중...
+                        </div>
+                    </div>
+                    
+                    <div class="ranking-actions">
+                        <button class="btn secondary" id="closeRankingBtn">
+                            <i class="fas fa-arrow-left"></i> 돌아가기
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="overlay result-screen win-screen">
-            <div class="overlay-content">
-                <div class="result-header">
-                    <div class="result-icon">🏆</div>
-                    <h2>승리!</h2>
-                    <p class="result-sub">모든 몬스터 물리침</p>
-                </div>
-                
-                <div class="result-stats">
-                    <div class="result-stat">
-                        <div class="stat-icon">⭐</div>
-                        <div class="stat-info">
-                            <div class="stat-label">점수</div>
-                            <div class="stat-value" id="finalScore">0</div>
+            
+            <div class="overlay result-screen win-screen">
+                <div class="overlay-content">
+                    <div class="result-header">
+                        <div class="result-icon">🏆</div>
+                        <h2>승리!</h2>
+                        <p class="result-sub">모든 몬스터 물리침</p>
+                    </div>
+                    
+                    <div class="result-stats">
+                        <div class="result-stat">
+                            <div class="stat-icon">⭐</div>
+                            <div class="stat-info">
+                                <div class="stat-label">점수</div>
+                                <div class="stat-value" id="finalScore">0</div>
+                            </div>
+                        </div>
+                        <div class="result-stat">
+                            <div class="stat-icon">🔥</div>
+                            <div class="stat-info">
+                                <div class="stat-label">최고 콤보</div>
+                                <div class="stat-value" id="finalCombo">0</div>
+                            </div>
+                        </div>
+                        <div class="result-stat">
+                            <div class="stat-icon">🎯</div>
+                            <div class="stat-info">
+                                <div class="stat-label">정확도</div>
+                                <div class="stat-value" id="finalAccuracy">100%</div>
+                            </div>
+                        </div>
+                        <div class="result-stat">
+                            <div class="stat-icon">⏱️</div>
+                            <div class="stat-info">
+                                <div class="stat-label">시간</div>
+                                <div class="stat-value" id="finalTime">0초</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="result-stat">
-                        <div class="stat-icon">🔥</div>
-                        <div class="stat-info">
-                            <div class="stat-label">최고 콤보</div>
-                            <div class="stat-value" id="finalCombo">0</div>
-                        </div>
+                    
+                    <div class="result-actions">
+                        <button class="btn primary" id="playAgainBtn">
+                            <i class="fas fa-redo"></i> 다시하기
+                        </button>
+                        <button class="btn secondary" id="winRankingBtn">
+                            <i class="fas fa-trophy"></i> 랭킹 보기
+                        </button>
                     </div>
-                    <div class="result-stat">
-                        <div class="stat-icon">🎯</div>
-                        <div class="stat-info">
-                            <div class="stat-label">정확도</div>
-                            <div class="stat-value" id="finalAccuracy">100%</div>
-                        </div>
-                    </div>
-                    <div class="result-stat">
-                        <div class="stat-icon">⏱️</div>
-                        <div class="stat-info">
-                            <div class="stat-label">시간</div>
-                            <div class="stat-value" id="finalTime">0초</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="result-actions">
-                    <button class="btn primary" id="playAgainBtn">
-                        <i class="fas fa-redo"></i> 다시하기
-                    </button>
-                    <button class="btn secondary" id="winRankingBtn">
-                        <i class="fas fa-trophy"></i> 랭킹 보기
-                    </button>
                 </div>
             </div>
-        </div>
-        
-        <div class="overlay result-screen lose-screen">
-            <div class="overlay-content">
-                <div class="result-header">
-                    <div class="result-icon">💀</div>
-                    <h2>패배</h2>
-                    <p class="result-sub">체력 소진</p>
-                </div>
-                
-                <div class="result-stats">
-                    <div class="result-stat">
-                        <div class="stat-icon">⭐</div>
-                        <div class="stat-info">
-                            <div class="stat-label">점수</div>
-                            <div class="stat-value" id="loseScore">0</div>
+            
+            <div class="overlay result-screen lose-screen">
+                <div class="overlay-content">
+                    <div class="result-header">
+                        <div class="result-icon">💀</div>
+                        <h2>패배</h2>
+                        <p class="result-sub">체력 소진</p>
+                    </div>
+                    
+                    <div class="result-stats">
+                        <div class="result-stat">
+                            <div class="stat-icon">⭐</div>
+                            <div class="stat-info">
+                                <div class="stat-label">점수</div>
+                                <div class="stat-value" id="loseScore">0</div>
+                            </div>
+                        </div>
+                        <div class="result-stat">
+                            <div class="stat-icon">🔥</div>
+                            <div class="stat-info">
+                                <div class="stat-label">최고 콤보</div>
+                                <div class="stat-value" id="loseCombo">0</div>
+                            </div>
+                        </div>
+                        <div class="result-stat">
+                            <div class="stat-icon">🎯</div>
+                            <div class="stat-info">
+                                <div class="stat-label">클리어 단계</div>
+                                <div class="stat-value" id="loseStage">1/10</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="result-stat">
-                        <div class="stat-icon">🔥</div>
-                        <div class="stat-info">
-                            <div class="stat-label">최고 콤보</div>
-                            <div class="stat-value" id="loseCombo">0</div>
-                        </div>
+                    
+                    <div class="result-actions">
+                        <button class="btn primary" id="restartFromLoseBtn">
+                            <i class="fas fa-redo"></i> 다시 도전
+                        </button>
+                        <button class="btn secondary" id="loseRankingBtn">
+                            <i class="fas fa-trophy"></i> 랭킹 보기
+                        </button>
                     </div>
-                    <div class="result-stat">
-                        <div class="stat-icon">🎯</div>
-                        <div class="stat-info">
-                            <div class="stat-label">클리어 단계</div>
-                            <div class="stat-value" id="loseStage">1/10</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="result-actions">
-                    <button class="btn primary" id="restartFromLoseBtn">
-                        <i class="fas fa-redo"></i> 다시 도전
-                    </button>
-                    <button class="btn secondary" id="loseRankingBtn">
-                        <i class="fas fa-trophy"></i> 랭킹 보기
-                    </button>
                 </div>
             </div>
         </div>
