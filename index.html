@@ -78,6 +78,10 @@
                     <span class="stage-slash">/</span>
                     <span class="stage-total">10</span>
                 </div>
+                <div class="score-display">
+                    <span class="score-label">SCORE</span>
+                    <span class="score-value" id="currentScore">0</span>
+                </div>
             </div>
             
             <div class="header-right">
@@ -156,14 +160,14 @@
                    id="wordInput" 
                    class="word-input"
                    maxlength="5"
-                   placeholder="한글 2~5글자 입력 (ㆍ, · 가능)"
+                   placeholder="한글 2~5글자 입력"
                    autocapitalize="none"
                    autocorrect="off"
                    spellcheck="false"
                    autocomplete="off"
                    inputmode="text">
             <div class="input-hint">
-                <span class="hint-text">천지인 키보드: 아래아(ㆍ) 입력 가능</span>
+                <span class="hint-text"></span>
             </div>
         </div>
         

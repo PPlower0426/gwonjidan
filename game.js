@@ -114,6 +114,21 @@ function getDeviceId() {
     return deviceId;
 }
 
+// =================== 진동 시스템 ===================
+function vibrate(pattern) {
+    if ('vibrate' in navigator) {
+        try {
+            if (Array.isArray(pattern)) {
+                navigator.vibrate(pattern);
+            } else {
+                navigator.vibrate(pattern);
+            }
+        } catch (e) {
+            console.log('진동 실패:', e);
+        }
+    }
+}
+
 // =================== 화면 관리 ===================
 function showScreen(screen) {
     document.querySelectorAll('.overlay').forEach(overlay => {
@@ -204,6 +219,7 @@ function createComboEffect(combo) {
         createEffect('🔥', centerX, centerY, 'explosion', 'large');
         playSound('combo');
         shakeScreen(5, 300); // 콤보 진동
+        vibrate([100, 50, 100]); // 콤보 진동 패턴
         
         const comboText = document.createElement('div');
         comboText.className = 'combo-display';
@@ -407,6 +423,7 @@ function initElements() {
         playerHpText: document.getElementById('playerHpText'),
         
         currentStage: document.getElementById('currentStage'),
+        currentScore: document.getElementById('currentScore'),
         timeDisplay: document.getElementById('timeDisplay'),
         
         initialDisplay: document.getElementById('initialDisplay'),
@@ -551,6 +568,7 @@ function startGame() {
     
     createEffect('⚔️', 50, 50, 'explosion', 'large');
     shakeScreen(6, 600);
+    vibrate([100, 50, 100, 50, 200]); // 게임 시작 진동
     
     for (let i = 0; i < 8; i++) {
         setTimeout(() => {
@@ -624,6 +642,7 @@ function spawnMonster(level) {
     if (el.monsterAvatar) {
         el.monsterAvatar.textContent = monster.emoji;
         el.monsterAvatar.style.animation = 'monsterSpawn 0.8s ease-out forwards';
+        el.monsterAvatar.style.filter = ''; // 이전 필터 초기화
         
         setTimeout(() => {
             el.monsterAvatar.style.animation = 'monsterIdle 3s ease-in-out infinite';
@@ -720,6 +739,7 @@ function timeOut() {
     state.player.hp = Math.max(0, state.player.hp - damage);
     
     shakeScreen(8, 500);
+    vibrate(200); // 시간초과 진동
     
     if (el.playerAvatar) {
         const avatar = el.playerAvatar;
@@ -785,6 +805,7 @@ function correct(time, wordLength) {
     createEffect('✨', 50, 50, 'primary', 'large');
     createRippleEffect(50, 50, '#10b981');
     shakeScreen(4, 300);
+    vibrate(100); // 정답 진동
     
     state.stats.correct++;
     state.player.fastTime = Math.min(state.player.fastTime, time);
@@ -814,6 +835,7 @@ function correct(time, wordLength) {
             showRandomSpeech('monster', 'defense');
             createEffect('🛡️', 50, 50, 'primary');
             shakeScreen(3, 200);
+            vibrate(50); // 방어 진동
         }
     }
     
@@ -829,6 +851,7 @@ function correct(time, wordLength) {
             showRandomSpeech('monster', 'heal');
             createEffect('💚', 50, 50, 'success');
             shakeScreen(2, 150);
+            vibrate([30, 30, 30]); // 회복 진동
         }
     }
     
@@ -854,6 +877,7 @@ function correct(time, wordLength) {
     playSound('hit');
     
     updateHpDisplay();
+    updateScoreDisplay();
     
     if (state.monsterHp <= 0) {
         defeatMonster();
@@ -871,6 +895,7 @@ function wrong(time) {
     createEffect('💥', 50, 50, 'explosion', 'normal');
     createRippleEffect(50, 50, '#ef4444');
     shakeScreen(10, 600);
+    vibrate(300); // 오답 진동 (더 길게)
     
     resetCombo();
     
@@ -964,6 +989,7 @@ function usePotion() {
     playSound('potion');
     createEffect('🧪', 50, 50, 'explosion', 'large');
     shakeScreen(4, 400);
+    vibrate([50, 30, 50]); // 물약 진동 패턴
     
     if (el.playerAvatar) {
         const avatar = el.playerAvatar;
@@ -999,11 +1025,18 @@ function defeatMonster() {
     
     showRandomSpeech('monster', 'death');
     shakeScreen(8, 800);
+    vibrate([100, 50, 100, 50, 200]); // 처치 진동 패턴
     
     if (el.monsterAvatar) {
         const avatar = el.monsterAvatar;
         avatar.style.animation = 'monsterDeath 1.2s ease-in forwards';
         avatar.style.filter = 'brightness(0.5) grayscale(1)';
+        
+        // 애니메이션 종료 후 스타일 초기화
+        setTimeout(() => {
+            avatar.style.animation = '';
+            avatar.style.filter = '';
+        }, 1200);
     }
     
     for (let i = 0; i < 16; i++) {
@@ -1029,6 +1062,8 @@ function defeatMonster() {
     state.player.score += stageBonus;
     state.stats.cleared++;
     
+    updateScoreDisplay();
+    
     setTimeout(() => {
         state.stage++;
         
@@ -1040,6 +1075,7 @@ function defeatMonster() {
             
             playSound('victory');
             shakeScreen(5, 500);
+            vibrate(200); // 승리 진동
             
             if (state.stage % 3 === 0 && state.player.potions < CONFIG.POTION_COUNT) {
                 state.player.potions++;
@@ -1047,6 +1083,7 @@ function defeatMonster() {
                 if (el.potionBtn) el.potionBtn.classList.remove('disabled');
                 createEffect('🧪', 50, 50, 'potion');
                 shakeScreen(2, 200);
+                vibrate(100); // 물약 획득 진동
             }
         }
     }, 1200);
@@ -1096,6 +1133,7 @@ async function gameEnd(isWin) {
         if (el.finalTime) el.finalTime.textContent = `${state.gameTime}초`;
         playSound('victory');
         createEffect('🎉', 50, 50, 'warning');
+        vibrate([200, 100, 200, 100, 300]); // 승리 진동 패턴
         showScreen('win');
     } else {
         if (el.loseScore) el.loseScore.textContent = state.player.score.toLocaleString();
@@ -1103,6 +1141,7 @@ async function gameEnd(isWin) {
         if (el.loseStage) el.loseStage.textContent = `${state.stats.cleared}/${CONFIG.STAGES}`;
         playSound('wrong');
         createEffect('💀', 50, 50, 'danger');
+        vibrate(500); // 패배 진동
         showScreen('lose');
     }
 }
@@ -1143,8 +1182,15 @@ function restartGame() {
 // =================== UI 업데이트 ===================
 function updateUI() {
     updateHpDisplay();
+    updateScoreDisplay();
     if (el.potionCount) el.potionCount.textContent = state.player.potions;
     if (el.potionBtn) el.potionBtn.classList.toggle('disabled', state.player.potions <= 0);
+}
+
+function updateScoreDisplay() {
+    if (el.currentScore) {
+        el.currentScore.textContent = state.player.score.toLocaleString();
+    }
 }
 
 function updateHpDisplay() {
