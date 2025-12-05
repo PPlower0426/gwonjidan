@@ -1,4 +1,4 @@
-// game.js - 키보드 대응 최적화 버전
+// game.js - 단순화된 키보드 대응 버전
 
 // =================== 전역 변수 ===================
 const CONFIG = {
@@ -7,9 +7,9 @@ const CONFIG = {
     PLAYER_HP: 100,
     MONSTER_BASE_HP: 300,
     
-    BASE_DAMAGE: 24, // 20% 감소 (30 → 24)
+    BASE_DAMAGE: 24,
     TIME_BONUS: 5,
-    COMBO_MULTIPLIER: [1.0, 1.3, 1.6, 1.9, 2.2, 2.5, 2.8, 3.1, 3.4, 3.7], // 콤보 배율 감소
+    COMBO_MULTIPLIER: [1.0, 1.3, 1.6, 1.9, 2.2, 2.5, 2.8, 3.1, 3.4, 3.7],
     
     DEFENSE_CHANCE: [0, 0.1, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55],
     HEAL_CHANCE: [0, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5],
@@ -21,7 +21,7 @@ const CONFIG = {
     SCORE_STAGE: 3000,
     
     COMBO_THRESHOLDS: [3, 5, 8, 12],
-    COMBO_MULTIPLIERS: [1.6, 1.9, 2.2, 2.5], // 콤보 배율 감소
+    COMBO_MULTIPLIERS: [1.6, 1.9, 2.2, 2.5],
     
     POTION_HEAL: 40,
     POTION_COUNT: 2,
@@ -104,7 +104,6 @@ let state = {
 // 전역 DOM 요소
 let el = {};
 let keyboardActive = false;
-let originalWindowHeight = window.innerHeight;
 
 // =================== 유틸리티 함수 ===================
 function getDeviceId() {
@@ -116,7 +115,7 @@ function getDeviceId() {
     return deviceId;
 }
 
-// =================== 키보드 대응 시스템 ===================
+// =================== 단순화된 키보드 처리 ===================
 function setupKeyboardHandling() {
     // 입력 필드 포커스/블러 이벤트
     if (el.input) {
@@ -124,15 +123,18 @@ function setupKeyboardHandling() {
             keyboardActive = true;
             document.body.classList.add('keyboard-active');
             
-            // 작은 화면일 경우 추가 처리
+            // 작은 화면일 경우 추가 축소
             if (window.innerHeight < 600) {
-                adjustForSmallScreenWithKeyboard();
+                const battleArea = document.querySelector('.battle-area');
+                const problemArea = document.querySelector('.problem-area');
+                
+                if (battleArea) {
+                    battleArea.style.transform = 'scale(0.8)';
+                }
+                if (problemArea) {
+                    problemArea.style.transform = 'scale(0.8)';
+                }
             }
-            
-            // 일정 시간 후 자동으로 스크롤 방지
-            setTimeout(() => {
-                window.scrollTo(0, 0);
-            }, 100);
         });
         
         el.input.addEventListener('blur', function() {
@@ -140,93 +142,25 @@ function setupKeyboardHandling() {
             document.body.classList.remove('keyboard-active');
             
             // 레이아웃 복원
-            restoreLayoutAfterKeyboard();
+            const battleArea = document.querySelector('.battle-area');
+            const problemArea = document.querySelector('.problem-area');
+            
+            if (battleArea) {
+                battleArea.style.transform = '';
+            }
+            if (problemArea) {
+                problemArea.style.transform = '';
+            }
         });
     }
     
-    // 윈도우 크기 변경 감지 (키보드 나타남/사라짐)
-    let resizeTimer;
+    // 윈도우 크기 변경 감지
     window.addEventListener('resize', function() {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function() {
-            handleWindowResize();
-        }, 100);
-    });
-    
-    // 터치 이벤트로 키보드 외부 터치 시 키보드 숨기기
-    document.addEventListener('touchstart', function(e) {
-        if (keyboardActive && el.input && !el.input.contains(e.target)) {
-            // 입력 필드 외부 터치 시 키보드 숨기기
-            el.input.blur();
-        }
-    });
-}
-
-function handleWindowResize() {
-    const currentHeight = window.innerHeight;
-    
-    // 키보드가 나타난 것으로 판단 (화면 높이가 줄어듦)
-    if (currentHeight < originalWindowHeight * 0.7) {
-        if (!keyboardActive) {
-            keyboardActive = true;
-            document.body.classList.add('keyboard-active');
-        }
-    } 
-    // 키보드가 사라진 것으로 판단
-    else if (currentHeight > originalWindowHeight * 0.9) {
         if (keyboardActive) {
-            keyboardActive = false;
-            document.body.classList.remove('keyboard-active');
+            // 키보드가 활성화된 상태에서 크기 변경 시 화면 고정
+            window.scrollTo(0, 0);
         }
-    }
-    
-    originalWindowHeight = currentHeight;
-}
-
-function adjustForSmallScreenWithKeyboard() {
-    // 작은 화면에서 키보드가 나타날 때 추가 조정
-    const battleArea = document.querySelector('.battle-area');
-    const problemArea = document.querySelector('.problem-area');
-    
-    if (battleArea && problemArea) {
-        battleArea.style.transform = 'translateY(-50px)';
-        battleArea.style.height = '100px';
-        battleArea.style.minHeight = '100px';
-        
-        problemArea.style.transform = 'translateY(-50px)';
-        problemArea.style.minHeight = '90px';
-        problemArea.style.flex = '0.7';
-        
-        const meaningDisplay = document.querySelector('.meaning-display');
-        if (meaningDisplay) {
-            meaningDisplay.style.fontSize = '11px';
-            meaningDisplay.style.padding = '4px';
-            meaningDisplay.style.lineHeight = '1.2';
-        }
-    }
-}
-
-function restoreLayoutAfterKeyboard() {
-    // 레이아웃 복원
-    const battleArea = document.querySelector('.battle-area');
-    const problemArea = document.querySelector('.problem-area');
-    
-    if (battleArea && problemArea) {
-        battleArea.style.transform = '';
-        battleArea.style.height = '';
-        battleArea.style.minHeight = '';
-        
-        problemArea.style.transform = '';
-        problemArea.style.minHeight = '';
-        problemArea.style.flex = '';
-        
-        const meaningDisplay = document.querySelector('.meaning-display');
-        if (meaningDisplay) {
-            meaningDisplay.style.fontSize = '';
-            meaningDisplay.style.padding = '';
-            meaningDisplay.style.lineHeight = '';
-        }
-    }
+    });
 }
 
 // =================== 진동 시스템 ===================
@@ -286,7 +220,6 @@ function showScreen(screen) {
         el.input.blur();
         keyboardActive = false;
         document.body.classList.remove('keyboard-active');
-        restoreLayoutAfterKeyboard();
     }
 }
 
@@ -315,7 +248,7 @@ function showRandomSpeech(speaker = 'monster', type = 'normal') {
     showSpeech(randomText, speaker, type);
 }
 
-// =================== 이펙트 함수들 ===================
+// =================== 이펙트 함수들 (간소화) ===================
 function createEffect(emoji, x, y, type = 'primary', size = 'normal') {
     const layer = document.querySelector('.effects-layer');
     if (!layer) return;
@@ -325,19 +258,19 @@ function createEffect(emoji, x, y, type = 'primary', size = 'normal') {
     effect.textContent = emoji;
     effect.style.left = `${x}%`;
     effect.style.top = `${y}%`;
-    effect.style.fontSize = size === 'large' ? '64px' : size === 'small' ? '24px' : '36px';
+    effect.style.fontSize = size === 'large' ? '48px' : size === 'small' ? '20px' : '28px';
     effect.style.transform = 'translate(-50%, -50%)';
     effect.style.zIndex = '20';
-    effect.style.filter = 'drop-shadow(0 0 20px currentColor)';
+    effect.style.filter = 'drop-shadow(0 0 15px currentColor)';
     
     if (type === 'explosion') {
-        effect.style.animation = 'explode 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
+        effect.style.animation = 'explode 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
     } else if (type === 'float') {
-        effect.style.animation = 'float 2s ease-in-out forwards';
+        effect.style.animation = 'float 1.5s ease-in-out forwards';
     } else if (type === 'spin') {
-        effect.style.animation = 'spin 1s linear forwards';
+        effect.style.animation = 'spin 0.8s linear forwards';
     } else {
-        effect.style.animation = 'scaleIn 0.5s ease-out forwards';
+        effect.style.animation = 'scaleIn 0.4s ease-out forwards';
     }
     
     layer.appendChild(effect);
@@ -346,7 +279,7 @@ function createEffect(emoji, x, y, type = 'primary', size = 'normal') {
         if (effect.parentNode) {
             effect.remove();
         }
-    }, type === 'explosion' ? 800 : 1200);
+    }, type === 'explosion' ? 600 : 1000);
 }
 
 function createComboEffect(combo) {
@@ -355,8 +288,8 @@ function createComboEffect(combo) {
     if (combo >= 3) {
         createEffect('🔥', centerX, centerY, 'explosion', 'large');
         playSound('combo');
-        shakeScreen(5, 300); // 콤보 진동
-        vibrate([100, 50, 100]); // 콤보 진동 패턴
+        shakeScreen(4, 200);
+        vibrate([80, 40, 80]);
         
         const comboText = document.createElement('div');
         comboText.className = 'combo-display';
@@ -366,122 +299,24 @@ function createComboEffect(combo) {
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 72px;
+            font-size: 48px;
             font-weight: 900;
             color: #f59e0b;
-            text-shadow: 0 0 30px rgba(245, 158, 11, 0.9), 0 0 60px rgba(245, 158, 11, 0.6);
+            text-shadow: 0 0 15px rgba(245, 158, 11, 0.8), 0 0 30px rgba(245, 158, 11, 0.5);
             z-index: 1000;
             pointer-events: none;
-            animation: comboExplosion 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: comboExplosion 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
         `;
         
         const effectsLayer = document.querySelector('.effects-layer');
         if (effectsLayer) {
             effectsLayer.appendChild(comboText);
-            setTimeout(() => comboText.remove(), 1000);
-        }
-    }
-    
-    if (combo >= 5) {
-        for (let i = 0; i < 8; i++) {
-            const angle = (i * 45) * Math.PI / 180;
-            const x = centerX + Math.cos(angle) * 30;
-            const y = centerY + Math.sin(angle) * 30;
-            
-            setTimeout(() => {
-                createEffect('⭐', x, y, 'float', 'small');
-            }, i * 100);
+            setTimeout(() => comboText.remove(), 800);
         }
     }
 }
 
-function createAttackEffect(fromX, fromY, toX, toY, color = '#ef4444') {
-    const layer = document.querySelector('.effects-layer');
-    if (!layer) return;
-    
-    const attackPath = document.createElement('div');
-    attackPath.className = 'attack-path';
-    attackPath.style.cssText = `
-        position: absolute;
-        top: ${fromY}%;
-        left: ${fromX}%;
-        width: 0;
-        height: 4px;
-        background: linear-gradient(90deg, ${color}, transparent);
-        transform-origin: left center;
-        z-index: 5;
-        animation: attackBeam 0.3s ease-out forwards;
-    `;
-    
-    layer.appendChild(attackPath);
-    
-    setTimeout(() => {
-        if (attackPath.parentNode) attackPath.remove();
-    }, 500);
-}
-
-function createRippleEffect(x, y, color) {
-    const ripple = document.createElement('div');
-    ripple.style.cssText = `
-        position: absolute;
-        left: ${x}%;
-        top: ${y}%;
-        width: 20px;
-        height: 20px;
-        border: 2px solid ${color};
-        border-radius: 50%;
-        transform: translate(-50%, -50%);
-        animation: ripple 1s linear forwards;
-        z-index: 10;
-    `;
-    
-    const effectsLayer = document.querySelector('.effects-layer');
-    if (effectsLayer) {
-        effectsLayer.appendChild(ripple);
-        setTimeout(() => ripple.remove(), 1000);
-    }
-}
-
-function createShootingStar(startX, startY, endX, endY) {
-    const star = document.createElement('div');
-    star.textContent = '✨';
-    star.style.cssText = `
-        position: absolute;
-        left: ${startX}%;
-        top: ${startY}%;
-        font-size: 24px;
-        z-index: 5;
-        animation: shootingStar 1s linear forwards;
-    `;
-    
-    const keyframes = `
-        @keyframes shootingStar {
-            0% {
-                transform: translate(0, 0);
-                opacity: 1;
-            }
-            100% {
-                transform: translate(${endX - startX}%, ${endY - startY}%);
-                opacity: 0;
-            }
-        }
-    `;
-    
-    const style = document.createElement('style');
-    style.textContent = keyframes;
-    document.head.appendChild(style);
-    
-    const effectsLayer = document.querySelector('.effects-layer');
-    if (effectsLayer) {
-        effectsLayer.appendChild(star);
-        setTimeout(() => {
-            star.remove();
-            style.remove();
-        }, 1000);
-    }
-}
-
-function shakeScreen(intensity = 5, duration = 300) {
+function shakeScreen(intensity = 4, duration = 250) {
     const container = document.querySelector('.game-container');
     if (!container) return;
     
@@ -501,12 +336,12 @@ function showDamageNumber(amount, x, y, color = '#ef4444') {
         left: ${x}%;
         top: ${y}%;
         color: ${color};
-        font-size: 40px;
+        font-size: 32px;
         font-weight: 900;
-        text-shadow: 0 0 20px ${color}, 0 0 40px ${color};
+        text-shadow: 0 0 15px ${color}, 0 0 30px ${color};
         z-index: 1000;
         pointer-events: none;
-        animation: damageFloat 1.5s ease-out forwards;
+        animation: damageFloat 1.2s ease-out forwards;
     `;
     
     const effectsLayer = document.querySelector('.effects-layer');
@@ -518,7 +353,7 @@ function showDamageNumber(amount, x, y, color = '#ef4444') {
         if (damage.parentNode) {
             damage.remove();
         }
-    }, 1500);
+    }, 1200);
 }
 
 function playSound(type) {
@@ -637,10 +472,7 @@ function getDefaultWords() {
         { word: "감정이입", hint: "ㄱㅈㅇㅇ", meaning: "다른 사람의 감정을 자신의 것처럼 느끼는 것", difficulty: 5, length: 4 },
         { word: "사회계약", hint: "ㅅㅎㄱㅇ", meaning: "국가와 국민 사이의 암묵적인 약속", difficulty: 5, length: 4 },
         { word: "공사구분", hint: "ㄱㅅㄱㅂ", meaning: "공적인 일과 사적인 일을 구분하는 것", difficulty: 7, length: 4 },
-        { word: "다양성인정", hint: "ㄷㅇㅅㅇㅈ", meaning: "다양한 것을 인정하는 태도", difficulty: 8, length: 5 },
-        { word: "가야금", hint: "ㄱㅇㄱ", meaning: "한국의 전통 현악기", difficulty: 2, length: 3 },
-        { word: "아래아", hint: "ㅇㄹㅇ", meaning: "한글 옛글자로 아래에 붙이는 점", difficulty: 3, length: 3 },
-        { word: "야여요유", hint: "ㅇㅇㅇㅇ", meaning: "천지인 키보드 연습 단어", difficulty: 4, length: 4 }
+        { word: "다양성인정", hint: "ㄷㅇㅅㅇㅈ", meaning: "다양한 것을 인정하는 태도", difficulty: 8, length: 5 }
     ];
 }
 
@@ -699,9 +531,6 @@ async function init() {
     await loadWords();
     setupEvents();
     
-    // 초기 윈도우 높이 저장
-    originalWindowHeight = window.innerHeight;
-    
     console.log('✅ 게임 준비 완료');
 }
 
@@ -710,19 +539,8 @@ function startGame() {
     console.log('⚔️ 대결 시작!');
     
     createEffect('⚔️', 50, 50, 'explosion', 'large');
-    shakeScreen(6, 600);
-    vibrate([100, 50, 100, 50, 200]); // 게임 시작 진동
-    
-    for (let i = 0; i < 8; i++) {
-        setTimeout(() => {
-            const startX = Math.random() * 100;
-            const startY = -10;
-            const endX = startX + (Math.random() * 40 - 20);
-            const endY = 110;
-            
-            createShootingStar(startX, startY, endX, endY);
-        }, i * 150);
-    }
+    shakeScreen(5, 400);
+    vibrate([80, 40, 80, 40, 150]);
     
     resetState();
     spawnMonster(1);
@@ -733,8 +551,10 @@ function startGame() {
     
     setTimeout(() => {
         if (el.input) {
-            el.input.focus();
             el.input.value = '';
+            if (!keyboardActive) {
+                el.input.focus();
+            }
         }
     }, 300);
     
@@ -785,7 +605,7 @@ function spawnMonster(level) {
     if (el.monsterAvatar) {
         el.monsterAvatar.textContent = monster.emoji;
         el.monsterAvatar.style.animation = 'monsterSpawn 0.8s ease-out forwards';
-        el.monsterAvatar.style.filter = ''; // 이전 필터 초기화
+        el.monsterAvatar.style.filter = '';
         
         setTimeout(() => {
             el.monsterAvatar.style.animation = 'monsterIdle 3s ease-in-out infinite';
@@ -797,14 +617,6 @@ function spawnMonster(level) {
     if (el.currentStage) el.currentStage.textContent = level;
     
     updateHpDisplay();
-    
-    for (let i = 0; i < 12; i++) {
-        setTimeout(() => {
-            const x = 50 + (Math.random() * 40 - 20);
-            const y = 50 + (Math.random() * 40 - 20);
-            createEffect('✨', x, y, 'float', 'small');
-        }, i * 70);
-    }
     
     console.log(`🐉 몬스터 생성: ${monster.name} HP:${monster.hp} ATK:${monster.attack}`);
 }
@@ -866,7 +678,7 @@ function updateTime() {
             el.timeDisplay.style.color = '#ef4444';
             
             if (state.timeLeft <= 2) {
-                shakeScreen(2, 100);
+                shakeScreen(2, 80);
             }
         } else if (state.timeLeft <= 5) {
             el.timeDisplay.classList.remove('critical');
@@ -887,18 +699,18 @@ function timeOut() {
     const damage = calculatePlayerDamage();
     state.player.hp = Math.max(0, state.player.hp - damage);
     
-    shakeScreen(8, 500);
-    vibrate(200); // 시간초과 진동
+    shakeScreen(6, 400);
+    vibrate(150);
     
     if (el.playerAvatar) {
         const avatar = el.playerAvatar;
-        avatar.style.animation = 'playerHit 0.4s ease-in-out';
-        avatar.style.filter = 'brightness(2) drop-shadow(0 0 20px #ef4444)';
+        avatar.style.animation = 'playerHit 0.3s ease-in-out';
+        avatar.style.filter = 'brightness(1.8) drop-shadow(0 0 15px #ef4444)';
         
         setTimeout(() => {
             avatar.style.animation = 'playerIdle 3s ease-in-out infinite';
-            avatar.style.filter = 'drop-shadow(0 3px 10px rgba(16, 185, 129, 0.6))';
-        }, 400);
+            avatar.style.filter = 'drop-shadow(0 2px 8px rgba(16, 185, 129, 0.6))';
+        }, 300);
     }
     
     showDamageNumber(damage, 50, 50, '#ef4444');
@@ -915,7 +727,7 @@ function timeOut() {
     
     setTimeout(() => {
         newQuestion();
-    }, 800);
+    }, 600);
 }
 
 // =================== 정답 확인 ===================
@@ -958,9 +770,8 @@ function correct(time, wordLength) {
     console.log(`✅ 정답! (${wordLength}글자)`);
     
     createEffect('✨', 50, 50, 'primary', 'large');
-    createRippleEffect(50, 50, '#10b981');
-    shakeScreen(4, 300);
-    vibrate(100); // 정답 진동
+    shakeScreen(3, 200);
+    vibrate(80);
     
     state.stats.correct++;
     state.player.fastTime = Math.min(state.player.fastTime, time);
@@ -989,8 +800,8 @@ function correct(time, wordLength) {
             defended = true;
             showRandomSpeech('monster', 'defense');
             createEffect('🛡️', 50, 50, 'primary');
-            shakeScreen(3, 200);
-            vibrate(50); // 방어 진동
+            shakeScreen(2, 150);
+            vibrate(40);
         }
     }
     
@@ -1005,20 +816,19 @@ function correct(time, wordLength) {
             state.monsterHp = Math.min(state.monsterMaxHp, state.monsterHp + healAmount);
             showRandomSpeech('monster', 'heal');
             createEffect('💚', 50, 50, 'success');
-            shakeScreen(2, 150);
-            vibrate([30, 30, 30]); // 회복 진동
+            shakeScreen(2, 120);
+            vibrate([25, 25, 25]);
         }
     }
     
-    createAttackEffect(70, 50, 30, 50, '#10b981');
-    shakeScreen(6, 400);
+    shakeScreen(5, 300);
     
     if (el.monsterAvatar && !defended) {
         const avatar = el.monsterAvatar;
-        avatar.style.animation = 'hitEffect 0.3s ease-in-out';
+        avatar.style.animation = 'hitEffect 0.25s ease-in-out';
         setTimeout(() => {
             avatar.style.animation = 'monsterIdle 3s ease-in-out infinite';
-        }, 300);
+        }, 250);
     }
     
     showDamageNumber(finalDamage, 50, 50, defended ? '#6366f1' : '#ef4444');
@@ -1041,16 +851,15 @@ function correct(time, wordLength) {
     
     setTimeout(() => {
         newQuestion();
-    }, 800);
+    }, 600);
 }
 
 function wrong(time) {
     console.log('❌ 오답!');
     
     createEffect('💥', 50, 50, 'explosion', 'normal');
-    createRippleEffect(50, 50, '#ef4444');
-    shakeScreen(10, 600);
-    vibrate(300); // 오답 진동 (더 길게)
+    shakeScreen(8, 400);
+    vibrate(200);
     
     resetCombo();
     
@@ -1059,21 +868,13 @@ function wrong(time) {
     
     if (el.playerAvatar) {
         const avatar = el.playerAvatar;
-        avatar.style.animation = 'playerHit 0.4s ease-in-out';
-        avatar.style.filter = 'brightness(2) drop-shadow(0 0 20px #ef4444)';
+        avatar.style.animation = 'playerHit 0.3s ease-in-out';
+        avatar.style.filter = 'brightness(1.8) drop-shadow(0 0 15px #ef4444)';
         
         setTimeout(() => {
             avatar.style.animation = 'playerIdle 3s ease-in-out infinite';
-            avatar.style.filter = 'drop-shadow(0 3px 10px rgba(16, 185, 129, 0.6))';
-        }, 400);
-        
-        for (let i = 0; i < 6; i++) {
-            setTimeout(() => {
-                const x = 30 + Math.random() * 40;
-                const y = 30 + Math.random() * 40;
-                createEffect('💔', x, y, 'explosion', 'small');
-            }, i * 50);
-        }
+            avatar.style.filter = 'drop-shadow(0 2px 8px rgba(16, 185, 129, 0.6))';
+        }, 300);
     }
     
     showDamageNumber(damage, 50, 50, '#ef4444');
@@ -1091,7 +892,7 @@ function wrong(time) {
     
     setTimeout(() => {
         newQuestion();
-    }, 800);
+    }, 600);
 }
 
 function calculateDamage(time) {
@@ -1143,26 +944,18 @@ function usePotion() {
     
     playSound('potion');
     createEffect('🧪', 50, 50, 'explosion', 'large');
-    shakeScreen(4, 400);
-    vibrate([50, 30, 50]); // 물약 진동 패턴
+    shakeScreen(3, 300);
+    vibrate([40, 25, 40]);
     
     if (el.playerAvatar) {
         const avatar = el.playerAvatar;
-        avatar.style.animation = 'playerHeal 0.6s ease-out';
-        avatar.style.filter = 'brightness(1.5) drop-shadow(0 0 30px #10b981)';
+        avatar.style.animation = 'playerHeal 0.5s ease-out';
+        avatar.style.filter = 'brightness(1.4) drop-shadow(0 0 20px #10b981)';
         
         setTimeout(() => {
             avatar.style.animation = 'playerIdle 3s ease-in-out infinite';
-            avatar.style.filter = 'drop-shadow(0 3px 10px rgba(16, 185, 129, 0.6))';
-        }, 600);
-    }
-    
-    for (let i = 0; i < 8; i++) {
-        setTimeout(() => {
-            const x = 30 + Math.random() * 40;
-            const y = 30 + Math.random() * 40;
-            createEffect('💚', x, y, 'float', 'small');
-        }, i * 100);
+            avatar.style.filter = 'drop-shadow(0 2px 8px rgba(16, 185, 129, 0.6))';
+        }, 500);
     }
     
     updateHpDisplay();
@@ -1171,7 +964,7 @@ function usePotion() {
     
     setTimeout(() => {
         newQuestion();
-    }, 800);
+    }, 600);
 }
 
 // =================== 몬스터 처치 ===================
@@ -1179,38 +972,29 @@ function defeatMonster() {
     console.log(`🎉 몬스터 처치!`);
     
     showRandomSpeech('monster', 'death');
-    shakeScreen(8, 800);
-    vibrate([100, 50, 100, 50, 200]); // 처치 진동 패턴
+    shakeScreen(6, 500);
+    vibrate([80, 40, 80, 40, 150]);
     
     if (el.monsterAvatar) {
         const avatar = el.monsterAvatar;
-        avatar.style.animation = 'monsterDeath 1.2s ease-in forwards';
+        avatar.style.animation = 'monsterDeath 1s ease-in forwards';
         avatar.style.filter = 'brightness(0.5) grayscale(1)';
         
-        // 애니메이션 종료 후 스타일 초기화
         setTimeout(() => {
             avatar.style.animation = '';
             avatar.style.filter = '';
-        }, 1200);
+        }, 1000);
     }
     
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 12; i++) {
         setTimeout(() => {
             const angle = Math.random() * Math.PI * 2;
-            const distance = 20 + Math.random() * 40;
+            const distance = 15 + Math.random() * 30;
             const x = 50 + Math.cos(angle) * distance;
             const y = 50 + Math.sin(angle) * distance;
             
             createEffect('💥', x, y, 'explosion', 'small');
-        }, i * 40);
-    }
-    
-    for (let i = 0; i < 10; i++) {
-        setTimeout(() => {
-            const x = 20 + Math.random() * 60;
-            const y = 20 + Math.random() * 60;
-            createEffect('⭐', x, y, 'float', 'small');
-        }, i * 80);
+        }, i * 30);
     }
     
     const stageBonus = state.stage * CONFIG.SCORE_STAGE;
@@ -1229,19 +1013,19 @@ function defeatMonster() {
             newQuestion();
             
             playSound('victory');
-            shakeScreen(5, 500);
-            vibrate(200); // 승리 진동
+            shakeScreen(4, 400);
+            vibrate(150);
             
             if (state.stage % 3 === 0 && state.player.potions < CONFIG.POTION_COUNT) {
                 state.player.potions++;
                 if (el.potionCount) el.potionCount.textContent = state.player.potions;
                 if (el.potionBtn) el.potionBtn.classList.remove('disabled');
                 createEffect('🧪', 50, 50, 'potion');
-                shakeScreen(2, 200);
-                vibrate(100); // 물약 획득 진동
+                shakeScreen(2, 150);
+                vibrate(80);
             }
         }
-    }, 1200);
+    }, 1000);
 }
 
 // =================== 게임 종료 ===================
@@ -1262,7 +1046,6 @@ async function gameEnd(isWin) {
         el.input.blur();
         keyboardActive = false;
         document.body.classList.remove('keyboard-active');
-        restoreLayoutAfterKeyboard();
     }
     
     const accuracy = state.stats.total > 0 ? 
@@ -1296,7 +1079,7 @@ async function gameEnd(isWin) {
         if (el.finalTime) el.finalTime.textContent = `${state.gameTime}초`;
         playSound('victory');
         createEffect('🎉', 50, 50, 'warning');
-        vibrate([200, 100, 200, 100, 300]); // 승리 진동 패턴
+        vibrate([150, 80, 150, 80, 200]);
         showScreen('win');
     } else {
         if (el.loseScore) el.loseScore.textContent = state.player.score.toLocaleString();
@@ -1304,7 +1087,7 @@ async function gameEnd(isWin) {
         if (el.loseStage) el.loseStage.textContent = `${state.stats.cleared}/${CONFIG.STAGES}`;
         playSound('wrong');
         createEffect('💀', 50, 50, 'danger');
-        vibrate(500); // 패배 진동
+        vibrate(300);
         showScreen('lose');
     }
 }
@@ -1323,7 +1106,6 @@ function showSettings() {
         el.input.blur();
         keyboardActive = false;
         document.body.classList.remove('keyboard-active');
-        restoreLayoutAfterKeyboard();
     }
     
     if (el.settingsStage) el.settingsStage.textContent = `Lv.${state.stage}`;
@@ -1354,7 +1136,6 @@ function restartGame() {
         el.input.blur();
         keyboardActive = false;
         document.body.classList.remove('keyboard-active');
-        restoreLayoutAfterKeyboard();
     }
     
     startGame();
@@ -1496,7 +1277,7 @@ async function renderRankings(type = 'score') {
 
 // =================== DOM 로드 시 초기화 ===================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('⚔️ 권지단 어휘대전 - 키보드 대응 최적화 버전 로딩...');
+    console.log('⚔️ 권지단 어휘대전 - 단순화된 키보드 대응 버전 로딩...');
     init();
 });
 
